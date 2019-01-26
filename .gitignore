@@ -1,0 +1,36 @@
+# Eclipse
+/**/.classpath
+/**/.project
+/**/.settings/
+
+# Intellij
+/**/.idea/
+/**/*.iml
+/**/*.iws
+
+# Mac
+/**/.DS_Store
+
+# Maven
+/**/target/
+
+# Gradle
+/**/.gradle/
+gradle/
+
+# Webapp
+/**/src/main/webapp/WEB-INF/classes/
+
+# Others
+/**/.svn/
+/**/.myeclipse
+/**/.externalToolBuilders/
+/**/.recommenders/
+/**/.metadata/
+out/
+build/
+bin/
+logs/
+
+# rebel.xml
+/**/rebel.xml
