@@ -1,0 +1,276 @@
+package uss;
+
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.fastjson.JSON;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.sf.ddt.es.uss.req.PageParams;
+import com.sf.ddt.es.uss.res.AggsFlatResult;
+import com.sf.ddt.es.uss.res.AggsTreeResult;
+import com.sf.ddt.es.uss.res.AggsTreeResult.AggsTreeItem;
+import com.sf.ddt.es.uss.res.BaseResult;
+import com.sf.ddt.es.uss.res.NormalResult;
+import com.sf.ddt.es.uss.res.PageMapResult;
+import com.sf.ddt.es.uss.res.ScrollMapResult;
+import com.sf.ddt.http.Http;
+import com.sf.ddt.model.Pager;
+import com.sf.ddt.sysUtils.Numbers;
+
+/**
+ * USS Searcher
+ * 
+ * @author 01367825
+ */
+public enum SearchPlatform2 {
+
+    SEARCH, //
+
+    AGGS {
+        @Override
+        public PageParams parsePageParams(String params) {
+            throw new UnsupportedOperationException("Aggs search nonuse page params.");
+        }
+    }, //
+
+    DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")), //
+
+    SCROLL(ImmutableMap.of("version", "scroll")) {
+        @Override @SuppressWarnings("unchecked")
+        protected BaseResult convertResult(NormalResult result, String params) {
+            ScrollMapResult scrollResult = new ScrollMapResult(result);
+            Map<String, Object> data = result.getObj();
+            scrollResult.setReturnNum(Numbers.toInt(data.get("returnNum")));
+            scrollResult.setScrollId(Objects.toString(data.get("scrollId"), ""));
+            scrollResult.setList((List<Map<String, Object>>) data.get(HITS_ROOT));
+            return scrollResult;
+        }
+
+        @Override
+        public PageParams parsePageParams(String params) {
+            throw new UnsupportedOperationException("Scroll search cannot custom setting page params");
+        }
+    }, //
+
+    ;
+
+    private static Logger logger = LoggerFactory.getLogger(SearchPlatform2.class);
+
+    private static final String AGGS_ROOT = "aggregations";
+    private static final String HITS_ROOT = "hits";
+
+    private final String urlSuffix;
+    private final String requestBodyStructure;
+    private final ImmutableMap<String, String> defaultHeaders;
+
+    SearchPlatform2() {
+        this(ImmutableMap.of("version", "1.0"));
+    }
+
+    SearchPlatform2(ImmutableMap<String, String> defaultHeaders) {
+        this("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":{2}'}'", defaultHeaders);
+    }
+
+    SearchPlatform2(String requestBodyStructure, ImmutableMap<String, String> defaultHeaders) {
+        this.urlSuffix = this.name().toLowerCase();
+        this.requestBodyStructure = requestBodyStructure;
+        this.defaultHeaders = defaultHeaders;
+    }
+
+    public String urlSuffix() {
+        return this.urlSuffix;
+    }
+
+    public String requestBodyStructure() {
+        return this.requestBodyStructure;
+    }
+
+    public Map<String, String> defaultHeaders() {
+        return this.defaultHeaders;
+    }
+
+    public String buildRequestBody(String appId, String searchId, String params) {
+        return MessageFormat.format(this.requestBodyStructure, appId, searchId, params);
+    }
+
+    // ----------------------------------------------------------request search platform and response
+    public String getAsString(String url, String appId, String searchId,
+                              String params, Map<String, String> headers) {
+        logger.info("USS request params: {}", params);
+        String resp = buildHttp(url, appId, searchId, params, headers).request();
+        logger.info("USS response body: {}", resp);
+        return resp;
+    }
+
+    public <T> T get(String url, Class<T> type, String appId, String searchId,
+                     String params, Map<String, String> headers) {
+        return JSON.parseObject(getAsString(url, appId, searchId, params, headers), type);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getAsMap(String url, String appId, String searchId,
+                                        String params, Map<String, String> headers) {
+        return get(url, Map.class, appId, searchId, params, headers);
+    }
+
+    public BaseResult getAsResult(String url, String appId, String searchId,
+                                  String params, Map<String, String> headers) {
+        String resp = getAsString(url, appId, searchId, params, headers);
+        try {
+            NormalResult result = JSON.parseObject(resp, NormalResult.class);
+            if (!result.isSuccess() || MapUtils.isEmpty(result.getObj())) {
+                return new BaseResult(result);
+            }
+            result.setTookTime(Numbers.toInt(result.getObj().get("tookTime")));
+            result.setHitNum(Numbers.toInt(result.getObj().get("hitNum")));
+            return convertResult(result, params);
+        } catch (Exception e) {
+            logger.warn("BDP-USS search request failure: {}", resp);
+            return BaseResult.failure(resp);
+        }
+    }
+
+    protected BaseResult convertResult(NormalResult result, String params) {
+        Map<String, Object> data = result.getObj();
+        if (data.containsKey(AGGS_ROOT)) {
+            return convertAggsResult(result);
+        } else {
+            return convertPageResult(result, parsePageParams(params));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public PageParams parsePageParams(String params) {
+        Map<String, Object> map = JSON.parseObject(params, Map.class);
+        return new PageParams(
+            params,
+            Numbers.toInt(map.get("from"), PageParams.FROM), 
+            Numbers.toInt(map.get("size"), PageParams.SIZE)
+        );
+    }
+
+    // ------------------------------------------------------------------private methods
+    @SuppressWarnings("unchecked")
+    private static PageMapResult convertPageResult(
+        NormalResult result, PageParams pr) {
+        int pageSize = pr.getPageSize(), pageNum = pr.getPageNum(), from = pr.getFrom();
+        List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
+        Pager<Map<String, Object>> page = new Pager<>(list);
+        page.setTotal(result.getHitNum());
+        page.setPages((int) (page.getTotal() + pageSize - 1) / pageSize); // 总页数
+        page.setPageNum(pageNum);
+        page.setPageSize(pageSize);
+        page.setSize(CollectionUtils.isEmpty(list) ? 0 : list.size());
+        page.setStartRow(from);
+        page.setEndRow(from + page.getSize() - 1);
+        page.setIsFirstPage(pageNum == 1);
+        page.setIsLastPage(pageNum == page.getPages());
+        page.setHasNextPage(pageNum > 1);
+        page.setHasNextPage(pageNum < page.getPages());
+        page.setPrePage(pageNum - 1);
+        page.setNextPage(pageNum + 1);
+
+        return new PageMapResult(result, page);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static BaseResult convertAggsResult(NormalResult result) {
+        AggsTreeResult treeResult = new AggsTreeResult(result);
+        Map<String, AggsTreeItem[]> transformed = Maps.newHashMap();
+        treeResult.setAggs(transformed);
+
+        // aggregations of search result
+        Map<String, Map<String, Object>> aggs = 
+            (Map<String, Map<String, Object>>) result.getObj().get(AGGS_ROOT);
+
+        if (MapUtils.isEmpty(aggs)) {
+            return treeResult;
+        }
+
+        aggs.forEach((key, value) -> {
+            transformed.put(key, toItems((Map<String, Object>) value));
+        });
+        AggsFlatResult flatResult = treeResult.toAggsFlatResult();
+        return flatResult.isSingle() ? flatResult.toAggsSingleResult() : flatResult;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AggsTreeItem[] toItems(Map<String, Object> map) {
+        List<Map<String, Object>> subs = (List<Map<String, Object>>) map.get("buckets");
+        if (CollectionUtils.isEmpty(subs)) {
+            return null;
+        }
+
+        return subs.stream()
+                  .map(SearchPlatform2::toItem)
+                  .toArray(AggsTreeItem[]::new);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AggsTreeItem toItem(Map<String, Object> map) {
+        AggsTreeItem item = new AggsTreeItem();
+        map.forEach((key, value) -> {
+            switch (key) {
+                case "key":
+                    item.setKey(Objects.toString(value, ""));
+                    break;
+                case "doc_count":
+                    item.setCnt(Numbers.toInt(value));
+                    break;
+                default:
+                    Map<String, Object> down = (Map<String, Object>) value;
+                    item.setAgg(key);
+                    if (down.containsKey("buckets")) {
+                        item.setSub(toItems(down));
+                    } else {
+                        item.setVal(down.get("value"));
+                    }
+                    break;
+            }
+        });
+        return item;
+    }
+
+    /**
+     * @param url       the search-platform es http url address, 
+     *                  like as http://public-int-gw.intsit.sfdc.com.cn:1080/uss-search/searchService
+     * @param appId     the search-platform es http url api appid
+     * @param searchId  the search-platform es http url api searchId
+     * @param params    the search-platform es request params
+     * @param headers   the http request headers
+     * @return a Http instance
+     */
+    private Http buildHttp(String url, String appId, String searchId,
+                           String params, Map<String, String> headers) {
+        if (headers == null) {
+            headers = this.defaultHeaders;
+        } else if (this.defaultHeaders != null) {
+            this.defaultHeaders.forEach(headers::putIfAbsent);
+        }
+
+        return Http.post((url.endsWith("/") ? url : url + "/") + this.urlSuffix)
+                   .data(buildRequestBody(appId, searchId, params))
+                   .addHeader(headers)
+                   .connTimeoutSeconds(60)
+                   .readTimeoutSeconds(120)
+                   .contentType("application/json");
+    }
+
+    public static SearchPlatform2 of(String searcher) {
+        for (SearchPlatform2 each : SearchPlatform2.values()) {
+            if (each.name().equalsIgnoreCase(searcher)) {
+                return each;
+            }
+        }
+        return null;
+    }
+
+}
