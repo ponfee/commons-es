@@ -1,7 +1,5 @@
 package uss1;
 
-import static uss1.SearchConstants.DEFAULT_SIZE;
-import static uss1.SearchConstants.HEAD_RESULT_LIST;
 import static uss1.SearchConstants.HEAD_SCROLL_SIZE;
 import static uss1.SearchConstants.HEAD_SEARCH_ALL;
 
@@ -61,46 +59,36 @@ public class SearchRequest {
         return searcher.getAsMap(url, appId, searchId, params, headers);
     }
 
-    public BaseResult getAsResult() {
-        return searcher.getAsResult(url, appId, searchId, params, headers);
-    }
-
-    public BaseResult get() {
-        if (hasHeader(HEAD_SEARCH_ALL)) {
-            return getAll();
-        }
-
-        BaseResult result = getAsResult();
-        if (hasHeader(HEAD_RESULT_LIST) && (result instanceof PageResult)) {
-            return ((PageResult<?>) result).toListResult();
-        }
-
-        return result;
-    }
-
     @SuppressWarnings("unchecked")
-    public <T> BaseResult getAll() {
-        Holder<BaseResult> retn = Holder.empty();
-        Holder<List<T>> data = Holder.of(new LinkedList<>());
-        scrollSearch(
-            retn::getAndSet, 
-            (list, total, pages, no) -> data.get().addAll((List<T>) list)
-        );
+    public <T> BaseResult getAsResult() {
+        if (hasHeader(HEAD_SEARCH_ALL)) {
+            Holder<BaseResult> retn = Holder.empty();
+            List<T>    data = new LinkedList<>();
+            scrollSearch(
+                retn::getAndSet, 
+                (list, total, pages, no) -> data.addAll((List<T>) list)
+            );
 
-        BaseResult result = retn.get();
-        if (   result instanceof ScrollResult
-            || result instanceof PageResult
-        ) {
-            return new ListResult<>(result, data.get());
-        } else {
-            return result;
+            BaseResult result = retn.get();
+            if (   result instanceof ScrollResult
+                || result instanceof PageResult
+            ) {
+                return new ListResult<>(result, data);
+            } else {
+                return result;
+            }
         }
+
+        return ResultConvertor.of(headers).convert(
+            searcher.getAsResult(url, appId, searchId, params, headers)
+        );
     }
 
     public <T> void scrollSearch(ScrollSearchConsumer<T> callback) {
-        scrollSearch(null, callback);
+        scrollSearch(null, callback); // accept null: prevent non scroll search
     }
 
+    // -------------------------------------------------------------private methods
     private boolean hasHeader(String header) {
         return headers != null && headers.containsKey(header);
     }
@@ -110,10 +98,8 @@ public class SearchRequest {
     }
 
     private String getHeader(String header, String defaultVal) {
-        if (header == null) {
-            return defaultVal;
-        }
-        return headers.get(header);
+        return (headers == null || header == null) 
+               ? defaultVal : headers.get(header);
     }
 
     @SuppressWarnings("unchecked")
@@ -131,12 +117,13 @@ public class SearchRequest {
             }
 
             int totalRecords = scrollResult.getHitNum(), 
-                pageSize = Optional.ofNullable(getHeader(HEAD_SCROLL_SIZE)).map(Numbers::toInt).orElse(DEFAULT_SIZE),
-                totalPages = (totalRecords + pageSize - 1) / pageSize, 
+                // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
+                scrollSize = Optional.ofNullable(getHeader(HEAD_SCROLL_SIZE)).map(Numbers::toInt).orElse(1),
+                totalPages = PageParams.computeTotalPages(totalRecords, scrollSize), 
                 pageNo = 1;
             callback.nextPage(scrollResult.getList(), totalRecords, totalPages, pageNo++);
 
-            while (scrollResult.size() >= pageSize) {
+            while (scrollResult.size() >= scrollSize) {
                 scrollResult = (ScrollResult<T>) searcher.getAsResult(
                     url, appId, searchId, new ScrollParams(params, scrollResult.getScrollId()).buildParams(), headers
                 );
@@ -155,12 +142,12 @@ public class SearchRequest {
             PageParams pageParams = searcher.parsePageParams(params);
             int totalRecords = pageResult.getHitNum(), 
                 pageSize = pageParams.getPageSize(),
-                totalPages = (int) ((totalRecords + pageSize - 1) / pageSize), 
+                totalPages = PageParams.computeTotalPages(totalRecords, pageSize), 
                 pageNo = 1, from = pageParams.getFrom();
             callback.nextPage(pageResult.getPage().getRows(), totalRecords, totalPages, pageNo++);
 
             while (pageResult.size() >= pageSize) {
-                pageParams.setFrom(from += pageSize);
+                pageParams.setFrom(from += pageResult.size());
                 pageResult = (PageResult<T>) searcher.getAsResult(
                     url, appId, searchId, pageParams.buildParams(), headers
                 );
