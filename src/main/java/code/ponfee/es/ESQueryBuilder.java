@@ -350,7 +350,7 @@ public class ESQueryBuilder {
     SearchResponse pagination(Client client, int from, int size) {
         SearchRequestBuilder search = build(client, size);
         search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH); // 深度分布
-        search.setFrom(from).setExplain(false);
+        search.setFrom(from);
         return search.get();
     }
 
@@ -387,7 +387,7 @@ public class ESQueryBuilder {
         for (AggregationBuilder agg : aggs) {
             search.addAggregation(agg);
         }
-        return search.setSize(size);
+        return search.setSize(size).setExplain(false);
     }
 
     private BoolQueryBuilder query() {

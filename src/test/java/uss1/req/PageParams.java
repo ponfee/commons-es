@@ -3,8 +3,6 @@ package uss1.req;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.elasticsearch.search.sort.SortOrder;
-
 import com.alibaba.fastjson.JSON;
 
 /**
@@ -24,7 +22,7 @@ public class PageParams extends BaseParams {
     private int from;
     private int pageNum;
     private int pageSize;
-    private Map<String, SortOrder> sortOrder;
+    //private Map<String, org.elasticsearch.search.sort.SortOrder> sortOrder;
 
     public PageParams(String params, int from, int size) {
         super(params);
@@ -67,14 +65,6 @@ public class PageParams extends BaseParams {
 
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
-    }
-
-    public Map<String, SortOrder> getSortOrder() {
-        return sortOrder;
-    }
-
-    public void setSortOrder(Map<String, SortOrder> sortOrder) {
-        this.sortOrder = sortOrder;
     }
 
     @SuppressWarnings("unchecked")

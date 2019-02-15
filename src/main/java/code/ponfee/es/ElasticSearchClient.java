@@ -26,6 +26,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.MultiSearchRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -549,6 +550,36 @@ public class ElasticSearchClient implements DisposableBean {
         for (Entry<String, Object> entry : map.entrySet()) {
             bulkReq.add(new UpdateRequest(index, type, entry.getKey()).doc(entry.getValue()));
         }
+        BulkResponse resp = bulkReq.get();
+        if (resp.hasFailures()) {
+            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+        } else {
+            return Result.success();
+        }
+    }
+
+    /**
+     * Batch update or insert(if the document does not exists) documents
+     * 
+     * @param index the es index
+     * @param type  the es type
+     * @param map   the map: key as id, value as source
+     * @return update result
+     */
+    public Result<Void> upsertDocs(String index, String type, Map<String, Object> map) {
+        BulkRequestBuilder bulkReq = client.prepareBulk();
+        for (Entry<String, Object> entry : map.entrySet()) {
+            bulkReq.add(
+                new UpdateRequest(
+                    index, type, entry.getKey()
+                ).doc(
+                    entry.getValue()
+                ).upsert(
+                    new IndexRequest(index, type, entry.getKey()).source(entry.getValue())
+                )
+            );
+        }
+
         BulkResponse resp = bulkReq.get();
         if (resp.hasFailures()) {
             return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
