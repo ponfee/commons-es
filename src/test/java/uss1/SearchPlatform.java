@@ -29,22 +29,42 @@ import uss1.res.PageMapResult;
 import uss1.res.ScrollMapResult;
 
 /**
- * USS Searcher
+ * USS（unify search service） Searcher
  * 
  * @author Ponfee
  */
 public enum SearchPlatform {
 
-    SEARCH, //
+    SEARCH {
+        @Override
+        protected BaseResult convertResult(NormalResult result, String params) {
+            return convertPageResult(result, parsePageParams(params));
+        }
+    }, //
 
     AGGS {
+        @Override
+        protected BaseResult convertResult(NormalResult result, String params) {
+            return convertAggsResult(result);
+        }
+
         @Override
         public PageParams parsePageParams(String params) {
             throw new UnsupportedOperationException("Aggs search nonuse page params.");
         }
     }, //
 
-    DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")), //
+    DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")) {
+        @Override
+        protected BaseResult convertResult(NormalResult result, String params) {
+            Map<String, Object> data = result.getObj();
+            if (data.containsKey(AGGS_ROOT)) {
+                return convertAggsResult(result);
+            } else {
+                return convertPageResult(result, parsePageParams(params));
+            }
+        }
+    }, //
 
     SCROLL(ImmutableMap.of("version", "scroll")) {
         @Override @SuppressWarnings("unchecked")
@@ -141,14 +161,7 @@ public enum SearchPlatform {
         }
     }
 
-    protected BaseResult convertResult(NormalResult result, String params) {
-        Map<String, Object> data = result.getObj();
-        if (data.containsKey(AGGS_ROOT)) {
-            return convertAggsResult(result);
-        } else {
-            return convertPageResult(result, parsePageParams(params));
-        }
-    }
+    protected abstract BaseResult convertResult(NormalResult result, String params);
 
     @SuppressWarnings("unchecked")
     public PageParams parsePageParams(String params) {
@@ -163,8 +176,8 @@ public enum SearchPlatform {
     // ------------------------------------------------------------------private methods
     @SuppressWarnings("unchecked")
     private static PageMapResult convertPageResult(
-        NormalResult result, PageParams pr) {
-        int pageSize = pr.getPageSize(), pageNum = pr.getPageNum(), from = pr.getFrom();
+        NormalResult result, PageParams params) {
+        int pageSize = params.getPageSize(), pageNum = params.getPageNum(), from = params.getFrom();
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
         Page<Map<String, Object>> page = Page.of(list);
         page.setTotal(result.getHitNum());

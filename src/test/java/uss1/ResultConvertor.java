@@ -6,6 +6,8 @@ import java.util.Map;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 
+import uss1.res.AggsFlatResult;
+import uss1.res.AggsSingleResult;
 import uss1.res.BaseResult;
 import uss1.res.ListResult;
 import uss1.res.ObjectResult;
@@ -34,8 +36,11 @@ public enum ResultConvertor {
                 return new ObjectResult(
                     result, CollectionUtils.isEmpty(list) ? null : list.get(0)
                 );
+            } else if (result instanceof AggsFlatResult) {
+                return new AggsSingleResult((AggsFlatResult) result);
+            } else {
+                return result;
             }
-            return result;
         }
     }, //
 

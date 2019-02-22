@@ -3,6 +3,7 @@ package uss1.res;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +63,13 @@ public class AggsFlatResult extends BaseResult {
 
     private List<List<Object>> extractDataset(AggsTreeItem root) {
         LinkedHashMap<String, AggsTreeItem[]> sub = root.getSub();
+        AggsTreeItem[] items = getFirstValue(sub);
+        if (ArrayUtils.isEmpty(items)) {
+            return Collections.emptyList();
+        }
+
         List<List<Object>> dataset = Lists.newArrayList();
-        if (MapUtils.isEmpty(getFirstValue(sub)[0].getSub())) {
+        if (MapUtils.isEmpty(items[0].getSub())) {
             dataset.add(
                 sub.entrySet().stream().map(
                     e -> e.getValue()[0].getVal()

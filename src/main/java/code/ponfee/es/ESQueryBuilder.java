@@ -17,7 +17,10 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 /**
- * 查询条件构建
+ * 查询条件构建器
+ * 
+ * 明细数据查询与聚合汇总查询：size不指定则默认为10
+ * 
  * @author fupf
  */
 public class ESQueryBuilder {
@@ -346,7 +349,7 @@ public class ESQueryBuilder {
         return search.toString();
     }
 
-    // --------------------------package methods-------------------------
+    // ---------------------------------------------------package methods
     SearchResponse pagination(Client client, int from, int size) {
         SearchRequestBuilder search = build(client, size);
         search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH); // 深度分布
@@ -367,10 +370,11 @@ public class ESQueryBuilder {
         return search.get().getAggregations();
     }
 
-    // --------------------------private methods-------------------------
+    // ---------------------------------------------------private methods
     private SearchRequestBuilder build(Client client, int size) {
-        //search.request()          -> SearchRequest
-        //search.request().source() -> SearchSourceBuilder
+        //SearchRequestBuilder.request()          -> SearchRequest
+        //SearchRequestBuilder.request().source() -> SearchSourceBuilder
+        //SearchRequestBuilder.toString()         -> SearchRequestBuilder.request().source().toString()
         SearchRequestBuilder search = client.prepareSearch(indices);
         if (types != null) {
             search.setTypes(types);
