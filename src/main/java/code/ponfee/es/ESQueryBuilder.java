@@ -7,7 +7,12 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.geo.GeoDistance;
+import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
+import org.elasticsearch.index.query.GeoDistanceRangeQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -231,10 +236,78 @@ public class ESQueryBuilder {
         return this;
     }
 
+    // -------------------------------------------------------------经纬度
+    /**
+     * 查询[lon,lat]坐标点附件distance米内的数据
+     * 
+     * @param name the field name
+     * @param longitude the longitude
+     * @param latitude the latitude
+     * @param distance the distance
+     * @return this of caller 
+     */
+    public ESQueryBuilder geoDistance(String name, double longitude, double latitude, double distance) {
+        GeoDistanceQueryBuilder geo = QueryBuilders.geoDistanceQuery(name)
+                                                   .point(longitude, latitude)
+                                                   .distance(distance, DistanceUnit.METERS) // 米
+                                                   .geoDistance(GeoDistance.PLANE);
+        query().must(geo);
+        return this;
+    }
+
+    /**
+     * 根据两点矩形查询
+     * 
+     * @param name the field name
+     * @param topLat The top latitude
+     * @param leftLon The left longitude
+     * @param bottomLat The bottom latitude
+     * @param rightLon The right longitude
+     * @return this of caller
+     */
+    public ESQueryBuilder geoBoundingBox(String name, double topLat, double leftLon, double bottomLat, double rightLon) {
+        query().must(QueryBuilders.geoBoundingBoxQuery(name).setCorners(topLat, leftLon, bottomLat, rightLon));
+        return this;
+    }
+
+    /**
+     * 环形查询
+     * 
+     * @param name the field name
+     * @param lat the latitude
+     * @param lon the longitude
+     * @param from 内环
+     * @param to 外环
+     * @return this of caller
+     */
+    public ESQueryBuilder geoDistanceRange(String name, double lat, double lon, double from, double to) {
+        GeoDistanceRangeQueryBuilder queryBuilder = QueryBuilders.geoDistanceRangeQuery(name, lat, lon)
+                                                                 .from(from) // 
+                                                                 .to(to) // 
+                                                                 .includeLower(true)
+                                                                 .includeUpper(true)
+                                                                 .geoDistance(GeoDistance.PLANE);
+        query().must(queryBuilder);
+        return this;
+    }
+
+    /**
+     * 多边形查询
+     * 
+     * @param name the field name
+     * @param points the polygon point
+     * @return this of caller
+     */
+    public ESQueryBuilder geoBoundingBox(String name, List<GeoPoint> points) {
+        query().must(QueryBuilders.geoPolygonQuery(name, points));
+        return this;
+    }
+
     // --------------The clause (query) should appear in the matching document. ------------- //
     // --------------In a boolean query with no must clauses, one or more should clauses must match a document. ------------- //
     // --------------The minimum number of should clauses to match can be set using the minimum_should_matchparameter. ------------- //
     // --------------至少有一个term匹配（OR） ------------- //
+
     /**
      * ?=text
      * @param name
@@ -346,7 +419,7 @@ public class ESQueryBuilder {
             search.size(size); // default size 10
         }
 
-        return search.toString();
+        return search.explain(false).toString();
     }
 
     // ---------------------------------------------------package methods
