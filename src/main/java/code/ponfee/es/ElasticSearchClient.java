@@ -79,12 +79,12 @@ public class ElasticSearchClient implements DisposableBean {
      * @param clusterNodes 集群节点列表：ip1:port1,ip2:port2
      */
     public ElasticSearchClient(String clusterName, String clusterNodes) {
-        client = connectClient(clusterName, clusterNodes);
+        client = createClient(clusterName, clusterNodes);
     }
 
     /**
      * <code>
-     *  try (Client client = connectClient(clusterName, clusterNodes)) {
+     *  try (Client client = createClient(clusterName, clusterNodes)) {
      *    // do something...
      *  }
      * </code>
@@ -92,7 +92,7 @@ public class ElasticSearchClient implements DisposableBean {
      * @param clusterNodes
      * @return
      */
-    public static TransportClient connectClient(String clusterName, String clusterNodes) {
+    public static TransportClient createClient(String clusterName, String clusterNodes) {
         Settings settings = Settings.builder()
                                     .put("cluster.name", clusterName)
                                     .put("client.transport.sniff", true)

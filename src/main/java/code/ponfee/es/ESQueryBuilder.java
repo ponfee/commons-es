@@ -282,10 +282,8 @@ public class ESQueryBuilder {
      */
     public ESQueryBuilder geoDistanceRange(String name, double lat, double lon, double from, double to) {
         GeoDistanceRangeQueryBuilder queryBuilder = QueryBuilders.geoDistanceRangeQuery(name, lat, lon)
-                                                                 .from(from) // 
-                                                                 .to(to) // 
-                                                                 .includeLower(true)
-                                                                 .includeUpper(true)
+                                                                 .from(from).to(to) // 
+                                                                 .includeLower(true).includeUpper(true)
                                                                  .geoDistance(GeoDistance.PLANE);
         query().must(queryBuilder);
         return this;
