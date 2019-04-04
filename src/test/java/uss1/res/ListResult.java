@@ -25,7 +25,7 @@ public class ListResult<T> extends BaseResult {
     private static final long serialVersionUID = 1583479732588220379L;
 
     private final Class<T> type;
-    private List<T> rows;
+    private List<T> list;
 
     public ListResult() {
         this(null, null);
@@ -35,9 +35,9 @@ public class ListResult<T> extends BaseResult {
         this(base, null);
     }
 
-    public ListResult(BaseResult base, List<T> rows) {
+    public ListResult(BaseResult base, List<T> list) {
         super(base);
-        this.rows = rows;
+        this.list = list;
         this.type = GenericUtils.getActualTypeArgument(this.getClass());
     }
 
@@ -48,7 +48,7 @@ public class ListResult<T> extends BaseResult {
      * @return
      */
     public @Transient boolean isEmpty() {
-        return rows == null || rows.isEmpty();
+        return list == null || list.isEmpty();
     }
 
     /**
@@ -58,8 +58,8 @@ public class ListResult<T> extends BaseResult {
      */
     public void process(Consumer<T> action) {
         Preconditions.checkArgument(action != null);
-        if (rows != null) {
-            rows.forEach(action);
+        if (list != null) {
+            list.forEach(action);
         }
     }
 
@@ -72,27 +72,27 @@ public class ListResult<T> extends BaseResult {
     public <E> ListResult<E> transform(Function<T, E> transformer) {
         Preconditions.checkArgument(transformer != null);
         ListResult<E> result = new ListResult<>(this);
-        if (rows != null) {
-            result.setRows(this.rows.stream().map(transformer).collect(Collectors.toList()));
+        if (list != null) {
+            result.setList(this.list.stream().map(transformer).collect(Collectors.toList()));
         }
         return result;
     }
 
     @SuppressWarnings("unchecked")
     public <E> ListResult<E> copy() {
-        return this.copy((List<E>) rows);
+        return this.copy((List<E>) list);
     }
 
     /**
      * 拷贝
      * 
-     * @param rows
+     * @param list
      * @return
      */
-    public <E> ListResult<E> copy(List<E> rows) {
+    public <E> ListResult<E> copy(List<E> list) {
         ListResult<E> other = new ListResult<>();
         BeanUtils.copyProperties(this, other);
-        other.setRows(rows);
+        other.setList(list);
         return other;
     }
 
@@ -104,21 +104,21 @@ public class ListResult<T> extends BaseResult {
         );
     }
 
-    public void addRows(List<T> data) {
-        rows.addAll(data);
+    public void addList(List<T> data) {
+        list.addAll(data);
     }
 
     public int size() {
-        return Optional.ofNullable(rows).map(List::size).orElse(0);
+        return Optional.ofNullable(list).map(List::size).orElse(0);
     }
 
     // -----------------------------------------------------getter/setter
-    public List<T> getRows() {
-        return rows;
+    public List<T> getList() {
+        return list;
     }
 
-    public void setRows(List<T> rows) {
-        this.rows = rows;
+    public void setList(List<T> list) {
+        this.list = list;
     }
 
 }

@@ -41,6 +41,7 @@ public class BuildDslTest {
     public void test2() {
         ESQueryBuilder query = ESQueryBuilder.newBuilder("index", "type");
         query.mustExists("aa").mustNotEquals("bb", "");
+        query.includeFields("test1", "test2");
         //System.out.println(query.toString(0, 10));
         System.out.println(query.toString());
     }

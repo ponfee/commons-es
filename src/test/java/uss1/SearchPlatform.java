@@ -2,6 +2,7 @@ package uss1;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,11 +10,14 @@ import java.util.Objects;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import code.ponfee.commons.http.ContentType;
 import code.ponfee.commons.http.Http;
@@ -37,15 +41,15 @@ public enum SearchPlatform {
 
     SEARCH {
         @Override
-        protected BaseResult convertResult(NormalResult result, String params) {
+        protected BaseResult convertResult(NormalResult result, String params, Map<String, String> headers) {
             return convertPageResult(result, parsePageParams(params));
         }
     }, //
 
     AGGS {
         @Override
-        protected BaseResult convertResult(NormalResult result, String params) {
-            return convertAggsResult(result);
+        protected BaseResult convertResult(NormalResult result, String params, Map<String, String> headers) {
+            return convertAggsResult(result, headers);
         }
 
         @Override
@@ -56,10 +60,10 @@ public enum SearchPlatform {
 
     DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")) {
         @Override
-        protected BaseResult convertResult(NormalResult result, String params) {
+        protected BaseResult convertResult(NormalResult result, String params, Map<String, String> headers) {
             Map<String, Object> data = result.getObj();
             if (data.containsKey(AGGS_ROOT)) {
-                return convertAggsResult(result);
+                return convertAggsResult(result, headers);
             } else {
                 return convertPageResult(result, parsePageParams(params));
             }
@@ -68,7 +72,7 @@ public enum SearchPlatform {
 
     SCROLL(ImmutableMap.of("version", "scroll")) {
         @Override @SuppressWarnings("unchecked")
-        protected BaseResult convertResult(NormalResult result, String params) {
+        protected BaseResult convertResult(NormalResult result, String params, Map<String, String> headers) {
             ScrollMapResult scrollResult = new ScrollMapResult(result);
             Map<String, Object> data = result.getObj();
             scrollResult.setReturnNum(Numbers.toInt(data.get("returnNum")));
@@ -147,6 +151,9 @@ public enum SearchPlatform {
     public BaseResult getAsResult(String url, String appId, String searchId,
                                   String params, Map<String, String> headers) {
         String resp = getAsString(url, appId, searchId, params, headers);
+        if (StringUtils.isEmpty(resp)) {
+            return BaseResult.failure("Empty response.");
+        }
         try {
             NormalResult result = JSON.parseObject(resp, NormalResult.class);
             if (!result.isSuccess() || MapUtils.isEmpty(result.getObj())) {
@@ -154,14 +161,14 @@ public enum SearchPlatform {
             }
             result.setTookTime(Numbers.toInt(result.getObj().get("tookTime")));
             result.setHitNum(Numbers.toInt(result.getObj().get("hitNum")));
-            return convertResult(result, params);
+            return convertResult(result, params, headers);
         } catch (Exception e) {
             logger.warn("BDP-USS search request failure: {}", resp, e);
             return BaseResult.failure(resp);
         }
     }
 
-    protected abstract BaseResult convertResult(NormalResult result, String params);
+    protected abstract BaseResult convertResult(NormalResult result, String params, Map<String, String> headers);
 
     @SuppressWarnings("unchecked")
     public PageParams parsePageParams(String params) {
@@ -173,6 +180,15 @@ public enum SearchPlatform {
         );
     }
 
+    public static SearchPlatform of(String searcher) {
+        for (SearchPlatform each : SearchPlatform.values()) {
+            if (each.name().equalsIgnoreCase(searcher)) {
+                return each;
+            }
+        }
+        return null;
+    }
+
     // ------------------------------------------------------------------private methods
     @SuppressWarnings("unchecked")
     private static PageMapResult convertPageResult(
@@ -181,7 +197,7 @@ public enum SearchPlatform {
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
         Page<Map<String, Object>> page = Page.of(list);
         page.setTotal(result.getHitNum());
-        page.setPages((int) (page.getTotal() + pageSize - 1) / pageSize); // 总页数
+        page.setPages(PageParams.computeTotalPages(page.getTotal(), pageSize)); // 总页数
         page.setPageNum(pageNum);
         page.setPageSize(pageSize);
         page.setSize(CollectionUtils.isEmpty(list) ? 0 : list.size());
@@ -198,7 +214,7 @@ public enum SearchPlatform {
     }
 
     @SuppressWarnings("unchecked")
-    private static BaseResult convertAggsResult(NormalResult result) {
+    private static BaseResult convertAggsResult(NormalResult result, Map<String, String> headers) {
         AggsTreeResult tree = new AggsTreeResult(result);
 
         // aggregations of search result
@@ -208,11 +224,37 @@ public enum SearchPlatform {
         }
 
         tree.setAggs(resolveAggregate(aggs));
-        AggsFlatResult flat = tree.toAggsFlatResult();
+        //logger.info("tree: {}", JSON.toJSONString(tree, SerializerFeature.DisableCircularReferenceDetect));
+        if (headers != null && headers.containsKey(SearchConstants.HEAD_AGGS_TREE)) {
+            return tree; // spec search as aggs tree
+        } else {
+            AggsFlatResult flat = tree.toAggsFlatResult();
+            String[] columns = dimColumns(headers);
+            if (ArrayUtils.isNotEmpty(columns)) {
+                flat.adjustOrders(columns);
+            }
+            //logger.info("flat: {}", JSON.toJSONString(flat, SerializerFeature.DisableCircularReferenceDetect));
+            return flat;
+        }
+    }
 
-        //logger.error("tree: {}", JSON.toJSONString(tree, SerializerFeature.DisableCircularReferenceDetect));
-        //logger.error("flat: {}", JSON.toJSONString(flat, SerializerFeature.DisableCircularReferenceDetect));
-        return flat;
+    private static String[] dimColumns(Map<String, String> headers) {
+        if (headers == null) {
+            return null;
+        }
+
+        Object value = headers.get(SearchConstants.HEAD_AGGS_COLUMNS);
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof String[]) {
+            return (String[]) value;
+        } else if (value instanceof Collection) {
+            return ((Collection<?>) value).stream().map(x -> x.toString()).toArray(String[]::new);
+        } else {
+            return value.toString().split(",");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -256,9 +298,10 @@ public enum SearchPlatform {
      */
     private Http buildHttp(String url, String appId, String searchId,
                            String params, Map<String, String> headers) {
-        if (headers == null) {
-            headers = this.defaultHeaders;
-        } else if (this.defaultHeaders != null) {
+        headers = MapUtils.isEmpty(headers) 
+                  ? Maps.newHashMap() 
+                  : Maps.newHashMap(headers);
+        if (this.defaultHeaders != null) {
             this.defaultHeaders.forEach(headers::putIfAbsent);
         }
 
@@ -268,15 +311,6 @@ public enum SearchPlatform {
                    .connTimeoutSeconds(60)
                    .readTimeoutSeconds(120)
                    .contentType(ContentType.APPLICATION_JSON);
-    }
-
-    public static SearchPlatform of(String searcher) {
-        for (SearchPlatform each : SearchPlatform.values()) {
-            if (each.name().equalsIgnoreCase(searcher)) {
-                return each;
-            }
-        }
-        return null;
     }
 
 }

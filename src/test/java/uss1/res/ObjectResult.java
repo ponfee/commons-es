@@ -1,5 +1,7 @@
 package uss1.res;
 
+import java.util.Date;
+
 /**
  * USS object result
  * 
@@ -20,6 +22,14 @@ public class ObjectResult extends BaseResult {
     public ObjectResult(BaseResult other, Object obj) {
         super(other);
         this.obj = obj;
+    }
+
+    public static ObjectResult success(Object obj) {
+        ObjectResult result = new ObjectResult();
+        result.setSuccess(true);
+        result.setDate(new Date());
+        result.obj = obj;
+        return result;
     }
 
     public Object getObj() {

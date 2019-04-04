@@ -56,6 +56,7 @@ import code.ponfee.commons.model.Page;
 import code.ponfee.commons.model.PageHandler;
 import code.ponfee.commons.model.Result;
 import code.ponfee.commons.model.ResultCode;
+import code.ponfee.commons.reflect.CglibUtils;
 import code.ponfee.commons.util.ObjectUtils;
 import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
 import code.ponfee.es.mapping.IElasticSearchMapping;
@@ -866,7 +867,8 @@ public class ElasticSearchClient implements DisposableBean {
 
     // --------------------------------------scripts-----------------------------------------
     /**
-     * 使用脚本更新文档
+     * 使用脚本更新文档：painless，groovy
+     * 
      * @param index
      * @param type
      * @param id
@@ -961,7 +963,7 @@ public class ElasticSearchClient implements DisposableBean {
         } else if (clazz.isAssignableFrom(data.getClass())) {
             return (T) data;
         } else {
-            return ObjectUtils.map2bean(data, clazz);
+            return CglibUtils.map2bean(data, clazz);
         }
     }
 

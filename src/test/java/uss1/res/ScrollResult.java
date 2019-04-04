@@ -112,7 +112,10 @@ public class ScrollResult<T> extends BaseResult {
     }
 
     public ListResult<T> toListResult() {
-        return new ListResult<>(this, Optional.ofNullable(this.getList()).orElse(Lists.newArrayList()));
+        return new ListResult<>(
+            this, 
+            Optional.ofNullable(this.getList()).orElse(Lists.newArrayList())
+        );
     }
 
     public int size() {

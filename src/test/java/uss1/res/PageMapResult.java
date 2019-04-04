@@ -6,7 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
 import code.ponfee.commons.model.Page;
-import code.ponfee.commons.util.ObjectUtils;
+import code.ponfee.commons.reflect.CglibUtils;
 
 /**
  * USS page map result
@@ -29,7 +29,7 @@ public class PageMapResult extends PageResult<Map<String, Object>> {
 
     // ------------------------------------------------------------
     public <E> PageResult<E> transform(Class<E> targetType) {
-        return super.transform(map -> ObjectUtils.map2bean(map, targetType));
+        return super.transform(map -> CglibUtils.map2bean(map, targetType));
     }
 
     @Override

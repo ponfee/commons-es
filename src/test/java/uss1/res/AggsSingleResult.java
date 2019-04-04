@@ -1,14 +1,23 @@
 package uss1.res;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+
+import com.google.common.collect.Sets;
+
+import code.ponfee.commons.collect.Collects;
 
 /**
  * USS aggs single result
  * 
- * @author 01367825
+ * 如：饼图时可使用该结构
+ * 
+ * @author Ponfee
  */
 public class AggsSingleResult extends BaseResult {
 
@@ -18,10 +27,11 @@ public class AggsSingleResult extends BaseResult {
 
     public AggsSingleResult() {}
 
-    public AggsSingleResult(AggsFlatResult aggs) {
-        List<Object[]> ds = aggs.getAggs().getDataset();
+    public AggsSingleResult(AggsFlatResult flat) {
+        super(flat);
+        List<Object[]> ds = flat.getAggs().getDataset();
         Object[] dataset = CollectionUtils.isEmpty(ds) ? null : ds.get(0);
-        this.aggs = new AggsSingleItem(aggs.getAggs().getColumns(), dataset);
+        this.aggs = new AggsSingleItem(flat.getAggs().getColumns(), dataset);
     }
 
     public AggsSingleItem getAggs() {
@@ -30,6 +40,46 @@ public class AggsSingleResult extends BaseResult {
 
     public void setAggs(AggsSingleItem aggs) {
         this.aggs = aggs;
+    }
+
+    /**
+     * Adjusts the data orders
+     * 
+     * @param fields the fields
+     */
+    public void adjustOrders(String... fields) {
+        if (Sets.newHashSet(fields).size() != fields.length) {
+            throw new RuntimeException("Repeat columns: " + Arrays.toString(fields));
+        }
+        if (   this.getAggs() == null 
+            || ArrayUtils.isEmpty(this.getAggs().getColumns()) 
+            || ArrayUtils.isEmpty(this.getAggs().getDataset())
+        ) {
+            return;
+        }
+        String[] columns = this.getAggs().getColumns(); // 数据列
+        Object[] dataset = this.getAggs().getDataset(); // 数据集
+        List<String> diff = Collects.different(Arrays.asList(columns), Arrays.asList(fields));
+        if (!diff.isEmpty()) {
+            throw new RuntimeException("Unknown columns: " + diff + ".");
+        }
+        List<int[]> swaps = new ArrayList<>();
+        for (int i = 0, j, n = fields.length; i < n; i++) { // 以dimensions为基准
+            for (j = i; j < n; j++) {
+                if (fields[i].equals(columns[j])) {
+                    break;
+                }
+            }
+            if (i != j) {
+                Collects.swap(columns, i, j);
+                swaps.add(new int[] { i, j });
+            }
+        }
+        if (ArrayUtils.isNotEmpty(dataset) && CollectionUtils.isNotEmpty(swaps)) {
+            for (int[] swap : swaps) {
+                Collects.swap(dataset, swap[0], swap[1]);
+            }
+        }
     }
 
     public static class AggsSingleItem implements Serializable {

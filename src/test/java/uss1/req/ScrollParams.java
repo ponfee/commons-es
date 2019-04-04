@@ -40,7 +40,9 @@ import com.alibaba.fastjson.JSON;
  *                  "create_time": "2018-05-21 15:49:05",
  *                  "customer_code": "0100009656",
  *                  "table_name": "pl_get_bill_detail"
- *              }...
+ *              },
+ *              ...
+ *              {xxx}
  *          ],
  *          "scrollId": "DnF1ZXJ5VGhlbkZldGNoBQAAAAABy7xkFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZRZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJRAAAAAAHLvGYWdmNNS3NJLW1SOHFkcWFMcGJPYkwyUQAAAAABy7xoFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZxZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJR"
  *      }

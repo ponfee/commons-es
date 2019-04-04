@@ -63,7 +63,7 @@ public class SearchRequest {
     public <T> BaseResult getAsResult() {
         if (hasHeader(HEAD_SEARCH_ALL)) {
             Holder<BaseResult> retn = Holder.empty();
-            List<T>    data = new LinkedList<>();
+            List<T> data = new LinkedList<>();
             scrollSearch(
                 retn::getAndSet, 
                 (list, total, pages, no) -> data.addAll((List<T>) list)
@@ -88,7 +88,7 @@ public class SearchRequest {
         scrollSearch(null, callback); // accept null: prevent non scroll search
     }
 
-    // -------------------------------------------------------------private methods
+    // -------------------------------------------------------------------private methods
     private boolean hasHeader(String header) {
         return headers != null && headers.containsKey(header);
     }
@@ -116,9 +116,9 @@ public class SearchRequest {
                 return;
             }
 
-            int totalRecords = scrollResult.getHitNum(), 
+            int totalRecords = scrollResult.getHitNum(),
                 // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
-                scrollSize = Optional.ofNullable(getHeader(HEAD_SCROLL_SIZE)).map(Numbers::toInt).orElse(1),
+                scrollSize = Optional.ofNullable(getHeader(HEAD_SCROLL_SIZE)).map(Numbers::toInt).orElse(scrollResult.getList().size()),
                 totalPages = PageParams.computeTotalPages(totalRecords, scrollSize), 
                 pageNo = 1;
             callback.nextPage(scrollResult.getList(), totalRecords, totalPages, pageNo++);

@@ -4,16 +4,20 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
+import code.ponfee.commons.collect.Collects;
 import uss1.res.AggsTreeResult.AggsTreeItem;
 
 /**
@@ -47,6 +51,54 @@ public class AggsFlatResult extends BaseResult {
 
     public void setAggs(AggsFlatItem aggs) {
         this.aggs = aggs;
+    }
+
+    public void sort(Comparator<Object[]> comparator) {
+        if (aggs != null && CollectionUtils.isNotEmpty(aggs.getDataset())) {
+            aggs.getDataset().sort(comparator);
+        }
+    }
+
+    /**
+     * Adjusts the data orders
+     * 
+     * @param fields the fields
+     */
+    public void adjustOrders(String... fields) {
+        if (Sets.newHashSet(fields).size() != fields.length) {
+            throw new RuntimeException("Repeat columns: " + Arrays.toString(fields));
+        }
+        if (   this.getAggs() == null 
+            || ArrayUtils.isEmpty(this.getAggs().getColumns()) 
+            || CollectionUtils.isEmpty(this.getAggs().getDataset())
+        ) {
+            return;
+        }
+        String[]       columns = this.getAggs().getColumns(); // 数据列
+        List<Object[]> dataset = this.getAggs().getDataset(); // 数据集
+        List<String> diff = Collects.different(Arrays.asList(columns), Arrays.asList(fields));
+        if (!diff.isEmpty()) {
+            throw new RuntimeException("Unknown columns: " + diff + ".");
+        }
+        List<int[]> swaps = new ArrayList<>();
+        for (int i = 0, j, n = fields.length; i < n; i++) { // 以dimensions为基准
+            for (j = i; j < n; j++) {
+                if (fields[i].equals(columns[j])) {
+                    break;
+                }
+            }
+            if (i != j) {
+                Collects.swap(columns, i, j);
+                swaps.add(new int[] { i, j });
+            }
+        }
+        if (CollectionUtils.isNotEmpty(dataset) && CollectionUtils.isNotEmpty(swaps)) {
+            for (Object[] array : dataset) {
+                for (int[] swap : swaps) {
+                    Collects.swap(array, swap[0], swap[1]);
+                }
+            }
+        }
     }
 
     private List<String> extractColumns(AggsTreeItem root) {
@@ -122,5 +174,28 @@ public class AggsFlatResult extends BaseResult {
             this.dataset = dataset;
         }
     }
+
+    /*public static void main(String[] args) {
+        String[] dimensions = { "a", "b", "c", "d" };
+        AggsFlatResult result = new AggsFlatResult();
+
+        String[] columns = Arrays.copyOf(dimensions, dimensions.length);
+        List<String> list = Lists.newArrayList(columns);
+        Collections.shuffle(list);
+        columns = list.toArray(new String[0]);
+        List<Object[]> data = Lists.newArrayList();
+        data.add(new Object[] { columns[0], columns[1], columns[2], columns[3] });
+        data.add(new Object[] { columns[0], columns[1], columns[2], columns[3] });
+        data.add(new Object[] { columns[0], columns[1], columns[2], columns[3] });
+        AggsFlatItem aggs = new AggsFlatItem(columns, data);
+        result.setAggs(aggs);
+
+        System.out.println(JSON.toJSONString(aggs.getColumns()));
+        System.out.println(JSON.toJSONString(aggs.getDataset()));
+        System.out.println("============");
+        result.fixDimension(dimensions);
+        System.out.println(JSON.toJSONString(aggs.getColumns()));
+        System.out.println(JSON.toJSONString(aggs.getDataset()));
+    }*/
 
 }

@@ -14,6 +14,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.GeoDistanceRangeQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -218,21 +219,44 @@ public class ESQueryBuilder {
      * name LIKE '*wildcard*'
      * @param name
      * @param wildcard
-     * @return
+     * @return caller this
      */
-    public ESQueryBuilder mustLike(String name, String wildcard) {
+    public ESQueryBuilder mustWildcard(String name, String wildcard) {
         query().must(QueryBuilders.wildcardQuery(name, wildcard));
         return this;
     }
 
     /**
      * not like
+     * 
      * @param name  before or after or both here with *
      * @param wildcard
+     * @return caller this
+     */
+    public ESQueryBuilder mustNotWildcard(String name, String wildcard) {
+        query().mustNot(QueryBuilders.wildcardQuery(name, wildcard));
+        return this;
+    }
+
+    /**
+     * Uses script
+     * 
+     * @param script
      * @return
      */
-    public ESQueryBuilder mustNotLike(String name, String wildcard) {
-        query().mustNot(QueryBuilders.wildcardQuery(name, wildcard));
+    public ESQueryBuilder mustScript(String script) {
+        query().must(QueryBuilders.scriptQuery(new Script(script)));
+        return this;
+    }
+
+    /**
+     * Uses script
+     * 
+     * @param script
+     * @return
+     */
+    public ESQueryBuilder mustNotScript(String script) {
+        query().mustNot(QueryBuilders.scriptQuery(new Script(script)));
         return this;
     }
 
@@ -386,7 +410,7 @@ public class ESQueryBuilder {
 
     @Override
     public String toString() {
-        return toString(-1, -1);
+        return toString(-1, -1); // default from=0, size=10
     }
 
     /**
@@ -408,13 +432,13 @@ public class ESQueryBuilder {
             search.sort(sort);
         }
         for (AggregationBuilder agg : aggs) {
-            search.aggregation(agg); // the aggregation default size 10
+            search.aggregation(agg); // the aggregation default size=10
         }
         if (from > -1) {
-            search.from(from); // default from 0
+            search.from(from); // default from=0
         }
         if (size > -1) {
-            search.size(size); // default size 10
+            search.size(size); // default size=10
         }
 
         return search.explain(false).toString();
