@@ -441,7 +441,7 @@ public class ESQueryBuilder {
             search.size(size); // default size=10
         }
 
-        return search.explain(false).toString();
+        return search/*.explain(false)*/.toString();
     }
 
     // ---------------------------------------------------package methods
@@ -486,7 +486,7 @@ public class ESQueryBuilder {
         for (AggregationBuilder agg : aggs) {
             search.addAggregation(agg);
         }
-        return search.setSize(size).setExplain(false);
+        return search.setSize(size)/*.setExplain(false)*/;
     }
 
     private BoolQueryBuilder query() {
