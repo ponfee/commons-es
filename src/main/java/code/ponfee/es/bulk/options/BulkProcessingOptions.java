@@ -52,7 +52,4 @@ public class BulkProcessingOptions {
         return backoffPolicy;
     }
 
-    public static BulkProcessingOptionsBuilder builder() {
-        return new BulkProcessingOptionsBuilder();
-    }
 }

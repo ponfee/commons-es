@@ -11,45 +11,50 @@ import org.elasticsearch.common.unit.TimeValue;
  */
 public class BulkProcessingOptionsBuilder {
 
-    private String name;
-    private int concurrentRequests = 1;
-    private int bulkActions = 1000;
-    private ByteSizeValue bulkSize = new ByteSizeValue(5, ByteSizeUnit.MB);
-    private TimeValue flushInterval = null;
-    private BackoffPolicy backoffPolicy = BackoffPolicy.exponentialBackoff();
+    private final String name;
 
-    public BulkProcessingOptionsBuilder setName(String name) {
+    private int concurrentRequests = 1;
+    private int bulkActions = 2000;
+    private ByteSizeValue bulkSize = new ByteSizeValue(5, ByteSizeUnit.MB);
+    private BackoffPolicy backoffPolicy = BackoffPolicy.exponentialBackoff();
+    private TimeValue flushInterval = null;
+
+    private BulkProcessingOptionsBuilder(String name) {
         this.name = name;
-        return this;
     }
 
-    public BulkProcessingOptionsBuilder setConcurrentRequests(int concurrentRequests) {
+    public static BulkProcessingOptionsBuilder newBuilder(String name) {
+        return new BulkProcessingOptionsBuilder(name);
+    }
+
+    public BulkProcessingOptionsBuilder concurrentRequests(int concurrentRequests) {
         this.concurrentRequests = concurrentRequests;
         return this;
     }
 
-    public BulkProcessingOptionsBuilder setBulkActions(int bulkActions) {
+    public BulkProcessingOptionsBuilder bulkActions(int bulkActions) {
         this.bulkActions = bulkActions;
         return this;
     }
 
-    public BulkProcessingOptionsBuilder setBulkSize(ByteSizeValue bulkSize) {
+    public BulkProcessingOptionsBuilder bulkSize(ByteSizeValue bulkSize) {
         this.bulkSize = bulkSize;
         return this;
     }
 
-    public BulkProcessingOptionsBuilder setFlushInterval(TimeValue flushInterval) {
+    public BulkProcessingOptionsBuilder flushInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
     }
 
-    public BulkProcessingOptionsBuilder setBackoffPolicy(BackoffPolicy backoffPolicy) {
+    public BulkProcessingOptionsBuilder backoffPolicy(BackoffPolicy backoffPolicy) {
         this.backoffPolicy = backoffPolicy;
         return this;
     }
 
     public BulkProcessingOptions build() {
-        return new BulkProcessingOptions(name, concurrentRequests, bulkActions,
-                                         bulkSize, flushInterval, backoffPolicy);
+        return new BulkProcessingOptions(
+            name, concurrentRequests, bulkActions, bulkSize, flushInterval, backoffPolicy
+        );
     }
 }

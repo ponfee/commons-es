@@ -1,38 +1,45 @@
 package code.ponfee.es;
 
 import static org.apache.commons.lang3.StringUtils.split;
+import static org.elasticsearch.common.xcontent.XContentType.JSON;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.MultiSearchRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -46,6 +53,7 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,12 +72,16 @@ import code.ponfee.es.mapping.IElasticSearchMapping;
 /**
  * ElasticSearch Client
  * 
+ * TransportClient：轻量级的Client，使用Netty线程池，Socket连接到ES集群。本身不加入到集群，只作为请求的处理。
+ * Node Client：客户端节点本身也是ES节点，加入到集群，和其他ElasticSearch节点一样。频繁的开启和关闭这类Node Clients会在集群中产生“噪音”。
+ * 
  * @author fupf
  */
 public class ElasticSearchClient implements DisposableBean {
 
     static final TimeValue SCROLL_TIMEOUT = TimeValue.timeValueSeconds(120); // 2 minutes
     private static final int SCROLL_SIZE = 10000; // 默认滚动数据量
+    private static final BulkProcessorConfiguration BULK_PROCESSOR = new BulkProcessorConfiguration();
 
     private static Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class);
 
@@ -96,7 +108,7 @@ public class ElasticSearchClient implements DisposableBean {
     public static TransportClient createClient(String clusterName, String clusterNodes) {
         Settings settings = Settings.builder()
                                     .put("cluster.name", clusterName)
-                                    .put("client.transport.sniff", true)
+                                    .put("client.transport.sniff", true) // 启动嗅探功能，这样只需要指定集群中的某一个节点(不一定是主节点)，然后会加载集群中的其他节点，这样只要程序不停即使此节点宕机仍然可以连接到其他节点。
                                     .put("client.transport.ignore_cluster_name", false)
                                     //.put("client.transport.ping_timeout", "15s")
                                     //.put("client.transport.nodes_sampler_interval", "5s")
@@ -210,42 +222,35 @@ public class ElasticSearchClient implements DisposableBean {
      * .endObject(); // }
      * 
      * 创建类型，设置mapping
+     * 
      * @param index
      * @param type
-     * @param mapping  json格式的mapping
+     * @param mappingJson  json格式的mapping
      */
-    public boolean putMapping(String index, String type, String mapping) {
-        XContentType contentType = XContentFactory.xContentType(mapping);
-        /*try {
-            PutMappingRequest mappingRequest = Requests.putMappingRequest(index).type(type);
-            mappingRequest.source(mapping, contentType);
-            return indicesAdminClient().putMapping(mappingRequest).actionGet().isAcknowledged(); // 创建索引结构
-        } catch (Exception e) {
-            logger.error("put mapping error: {} {} {}", index, type, mapping);
-            indicesAdminClient().prepareDelete(index);
-            return false;
-        }*/
-        return putMapping(index, type, mapping, contentType);
+    public boolean putMapping(String index, String type, String mappingJson) {
+        // XContentFactory.xContentType(String)
+        return putMapping(index, type, mappingJson, Function.identity());
     }
 
-    public boolean putMapping(String index, String type, String mapping, 
-                              XContentType contentType) {
-        return indicesAdminClient().preparePutMapping(index)
-                                   .setType(type)
-                                   .setSource(mapping, contentType)
-                                   .get().isAcknowledged();
+    public <T> boolean putMapping(String index, String type, T mappingSource, 
+                                  @Nonnull Function<T, String> jsonMapper) {
+        return indicesAdminClient()
+           .preparePutMapping(index).setType(type)
+           .setSource(jsonMapper.apply(mappingSource), JSON)
+           .get().isAcknowledged();
     }
 
     /**
      * 创建mapping
+     * 
      * @param indexName
      * @param esMapping
      * @return
      */
     public boolean putMapping(String indexName, IElasticSearchMapping esMapping) {
-        XContentBuilder contentType = esMapping.getMapping();
-        PutMappingRequest req = new PutMappingRequest(indexName).type(esMapping.getIndexType())
-                                               .source(contentType, contentType.contentType());
+        XContentBuilder content = esMapping.getMapping();
+        PutMappingRequest req = new PutMappingRequest(esMapping.getIndex())
+            .type(esMapping.getType()).source(content, content.contentType());
         return indicesAdminClient().putMapping(req).actionGet().isAcknowledged();
     }
 
@@ -357,109 +362,81 @@ public class ElasticSearchClient implements DisposableBean {
      * @param types
      * @return
      */
-    public boolean isTypesExists(String indices, String... types) {
+    public boolean isTypesExists(String[] indices, String... types) {
         return indicesAdminClient().prepareTypesExists(indices)
                                    .setTypes(types)
                                    .get().isExists();
     }
 
-    // --------------------------------------bulk processor---------------------------------------
-    public <T> void bulkProcessor(String index, String type, T entity) {
-        bulkProcessor(index, type, Collections.singletonList(entity));
+    // -----------------------------------------------------------------------------add document without id
+    public String addDoc(String index, String type, String json) {
+        return addDoc(index, type, json, Function.identity());
     }
 
-    public <T> void bulkProcessor(String index, String type, List<T> entities) {
-        bulkProcessor(index, type, entities.stream());
-    }
-
-    /**
-     * 批量创建索引
-     * @param index
-     * @param type
-     * @param entities    批量请求的数据（JSON格式）
-     * @param config      批处理配置
-     */
-    public <T> void bulkProcessor(String index, String type, Stream<T> entities, 
-                                  BulkProcessorConfiguration config) {
-        BulkProcessor bulkProcessor = config.build(client);
-        entities.map(x -> Optional.ofNullable(Jsons.toBytes(x)))
-                .filter(Optional::isPresent)
-                .map(x -> client.prepareIndex()
-                                 .setIndex(index).setType(type)
-                                .setSource(x.get(), XContentType.JSON)
-                                .request()
-                ).forEach(bulkProcessor::add);
-        bulkProcessor.flush();
-        try {
-            bulkProcessor.awaitClose(60, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            logger.error("bulk process error", e);
-        }
-    }
-
-    // --------------------------------------document---------------------------------------
     /**
      * 添加文档，不指定id（POST）
+     * 
      * @param index
      * @param type
      * @param object
+     * @param jsonMapper
      */
-    public String addDoc(String index, String type, Object object) {
-        //return client.prepareIndex(index, type).setSource(object).get().getId();
+    public <T> String addDoc(String index, String type, T object, 
+                             @Nonnull Function<T, String> jsonMapper) {
         return client.prepareIndex(index, type)
-                     .setSource(object, XContentType.JSON)
+                     .setSource(jsonMapper.apply(object), JSON)
                      .get().getId();
     }
 
-    /**
-     * 添加文档，指定id（PUT）
-     * @param index  索引，类似数据库
-     * @param type   类型，类似表
-     * @param id     指定id
-     * @param object 要增加的source
-     */
-    public String addDoc(String index, String type, String id, Object object) {
-        //return client.prepareIndex(index, type, id).setSource(object).get().getId();
-        return client.prepareIndex(index, type, id)
-                     .setSource(object, XContentType.JSON)
-                     .get().getId();
-    }
-
-    /**
-     * 批量添加，不指定id（POST）
-     * @param index
-     * @param type
-     * @param list
-     * @return result
-     */
-    public Result<Void> addDocs(String index, String type, List<Object> list) {
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        list.stream().forEach(
-            map -> bulkRequest.add(client.prepareIndex(index, type).setSource(map))
-        );
-        BulkResponse resp = bulkRequest.get();
-
-        if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
-        } else {
-            return Result.success();
-        }
+    // -----------------------------------------------------------------------------add document specify id
+    public String addDoc(String index, String type, String id, String json) {
+        return addDoc(index, type, id, json, Function.identity());
     }
 
     /**
      * 添加文档，指定id（PUT）
      * 
-     * @param index  索引
-     * @param type   类型
-     * @param map    文档数据：key为id，value为source
-     * @return result
+     * @param index  索引，类似数据库
+     * @param type   类型，类似表
+     * @param id     指定id
+     * @param object 要增加的source
+     * @param jsonMapper 
+     * @return
      */
-    public Result<Void> addDocs(String index, String type, Map<String, Object> map) {
+    public <T> String addDoc(String index, String type, String id, T object, 
+                             @Nonnull Function<T, String> jsonMapper) {
+        return client.prepareIndex(index, type, id)
+                     .setSource(jsonMapper.apply(object), JSON)
+                     .get().getId();
+    }
+
+    // -----------------------------------------------------------------------------batch add document
+    public Result<Void> addDocs(String index, String type, List<String> list) {
+        return addDocs(index, type, list, Function.identity(), null);
+    }
+
+    /**
+     * Batch add documents with Bulk
+     *   if idMapper is {@code null} then non specify id and use POST
+     *   else specify id, use PUT
+     * 
+     * @param index
+     * @param type
+     * @param list
+     * @param jsonMapper
+     * @param idMapper
+     * @return
+     */
+    public <T> Result<Void> addDocs(String index, String type, List<T> list, 
+                                    @Nonnull Function<T, String> jsonMapper, 
+                                    @Nullable Function<T, String> idMapper) {
         BulkRequestBuilder bulkRequest = client.prepareBulk();
-        map.forEach((key, value) -> {
-            bulkRequest.add(
-                client.prepareIndex(index, type, key).setSource(value)
-            );
+        list.stream().forEach(x -> {
+            IndexRequestBuilder builder = client.prepareIndex(index, type);
+            if (idMapper != null) {
+                builder.setId(idMapper.apply(x));
+            }
+            bulkRequest.add(builder.setSource(jsonMapper.apply(x), JSON)); // id尽量为物理表的主键
         });
         BulkResponse resp = bulkRequest.get();
         if (resp.hasFailures()) {
@@ -469,124 +446,107 @@ public class ElasticSearchClient implements DisposableBean {
         }
     }
 
+    // -----------------------------------------------------------------------------update document
+    public boolean updDoc(String index, String type, String id, String json) {
+        return updDoc(index, type, id, json, Function.identity());
+    }
+
     /**
-     * 批量添加文档：map为source（其中含key为id的键，PUT）
+     * 指定ID更新文档
+     * 
+     * @param index
+     * @param type
+     * @param id
+     * @param object
+     * @param jsonMapper
+     */
+    public <T> boolean updDoc(String index, String type, String id, T object, 
+                              @Nonnull Function<T, String> jsonMapper) {
+        try {
+            UpdateResponse resp = client.update(
+                new UpdateRequest(index, type, id).doc(jsonMapper.apply(object), JSON)
+            ).get();
+            return resp.getResult() == DocWriteResponse.Result.UPDATED;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Update doc occur error, index:{}, type:{}, id:{}, object:{}", index, type, id, object, e);
+            return false;
+        }
+    }
+
+    // -----------------------------------------------------------------------------bulk update documents
+    /**
+     * Bulk update documents
      * 
      * @param index
      * @param type
      * @param list
-     * @return result
+     * @param jsonMapper
+     * @param idMapper
+     * @return
      */
-    public Result<Void> addDocsWithId(String index, String type, List<Map<String, Object>> list) {
-        try {
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
-            for (Map<String, Object> map : list) {
-                XContentBuilder xcb = XContentFactory.jsonBuilder().startObject();
-                for (Entry<String, Object> entry : map.entrySet()) {
-                    if (!"id".equalsIgnoreCase(entry.getKey())) {
-                        xcb.field(entry.getKey(), entry.getValue());
-                    }
-                }
-                xcb.endObject();
-                bulkRequest.add(
-                    client.prepareIndex(index, type, Objects.toString(map.get("id")))
-                          .setSource(xcb) // id尽量为物理表的主键
-                );
-            }
-            BulkResponse resp = bulkRequest.get();
-            if (resp.hasFailures()) {
-                return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
-            } else {
-                return Result.success();
-            }
-        } catch (IOException e) {
-            logger.error("add docs error, index:{}, type:{}, object:{}", 
-                         index, type, Jsons.toJson(list), e);
-            return Result.failure(ResultCode.SERVER_ERROR);
+    public <T> Result<Void> updDocs(String index, String type, List<T> list, 
+                                    @Nonnull Function<T, String> jsonMapper,
+                                    @Nonnull Function<T, String> idMapper) {
+        BulkRequestBuilder bulkReq = client.prepareBulk();
+        list.forEach(x -> {
+            bulkReq.add(new UpdateRequest(index, type, idMapper.apply(x)).doc(jsonMapper.apply(x), JSON));
+        });
+        BulkResponse resp = bulkReq.get();
+        if (resp.hasFailures()) {
+            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+        } else {
+            return Result.success();
         }
     }
 
+    // -----------------------------------------------------------------------------bulk add or update documents
+    /**
+     * Update or insert(if the document does not exists) documents
+     * 
+     * @param index the es index
+     * @param type  the es type
+     * @param list  source list
+     * @param jsonMapper
+     * @param idMapper
+     * @return update result
+     */
+    public <T> Result<Void> upsertDocs(String index, String type, List<T> list,
+                                       @Nonnull Function<T, String> jsonMapper,
+                                       @Nonnull Function<T, String> idMapper) {
+        BulkRequestBuilder bulkReq = client.prepareBulk();
+        list.forEach(x -> {
+            String json = jsonMapper.apply(x), id = idMapper.apply(x);
+            bulkReq.add(
+                new UpdateRequest(index, type, id).doc(json, JSON)
+                    .upsert(new IndexRequest(index, type, id).source(json, JSON))
+            );
+        });
+
+        BulkResponse resp = bulkReq.get();
+        if (resp.hasFailures()) {
+            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+        } else {
+            return Result.success();
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------del doc
     /**
      * 删除文档
      * @param index
      * @param type
      * @param id
      */
-    public void delDoc(String index, String type, String id) {
-        client.prepareDelete(index, type, id).get();
+    public boolean delDoc(String index, String type, String id) {
+        DeleteResponse resp = client.prepareDelete(index, type, id).get();
+        return resp.getResult() == DocWriteResponse.Result.DELETED;
     }
 
-    /**
-     * 更新文档：key为field，value为field value
-     * @param index
-     * @param type
-     * @param id
-     * @param map
-     */
-    public void updDoc(String index, String type, String id, Map<String, Object> map) {
-        //client.prepareIndex(index, type, id).setSource(json, XContentType.JSON).get();
-        try {
-            UpdateRequest updateRequest = new UpdateRequest(index, type, id);
-            XContentBuilder xcb = XContentFactory.jsonBuilder().startObject();
-            for (Entry<String, Object> entry : map.entrySet()) {
-                xcb.field(entry.getKey(), entry.getValue());
-            }
-            xcb.endObject();
-            client.update(updateRequest.doc(xcb)).get();
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            logger.error("update docs error, index:{}, type:{}, id:{}, object:{}", 
-                         index, type, id, Jsons.toJson(map), e);
-        }
-    }
-
-    /**
-     * 批量更新文档
-     * @param index
-     * @param type
-     * @param map    key为id，value为source
-     * @return update result
-     */
-    public Result<Void> updDocs(String index, String type, Map<String, Object> map) {
-        BulkRequestBuilder bulkReq = client.prepareBulk();
-        for (Entry<String, Object> entry : map.entrySet()) {
-            bulkReq.add(new UpdateRequest(index, type, entry.getKey()).doc(entry.getValue()));
-        }
-        BulkResponse resp = bulkReq.get();
-        if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
-        } else {
-            return Result.success();
-        }
-    }
-
-    /**
-     * Batch update or insert(if the document does not exists) documents
-     * 
-     * @param index the es index
-     * @param type  the es type
-     * @param map   the map: key as id, value as source
-     * @return update result
-     */
-    public Result<Void> upsertDocs(String index, String type, Map<String, Object> map) {
-        BulkRequestBuilder bulkReq = client.prepareBulk();
-        for (Entry<String, Object> entry : map.entrySet()) {
-            bulkReq.add(
-                new UpdateRequest(
-                    index, type, entry.getKey()
-                ).doc(
-                    entry.getValue()
-                ).upsert(
-                    new IndexRequest(index, type, entry.getKey()).source(entry.getValue())
-                )
-            );
-        }
-
-        BulkResponse resp = bulkReq.get();
-        if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
-        } else {
-            return Result.success();
-        }
+    // ------------------------------------------------------------------------------------------get doc
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getDoc(String index, String type, String id) {
+        GetResponse response = client.prepareGet(index, type, id).get();
+        return convertFromMap(response.getSource(), Map.class);
     }
 
     /**
@@ -600,6 +560,12 @@ public class ElasticSearchClient implements DisposableBean {
     public <T> T getDoc(String index, String type, Class<T> clazz, String id) {
         GetResponse response = client.prepareGet(index, type, id).get();
         return convertFromMap(response.getSource(), clazz);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getDocs(String index, String type, String... ids) {
+        List<?> list = getDocs(index, type, Map.class, ids);
+        return (List<Map<String, Object>>) list;
     }
 
     /**
@@ -622,6 +588,135 @@ public class ElasticSearchClient implements DisposableBean {
         return result;
     }
 
+    // -----------------------------------------------------------------------------bulk processor add document
+    public <T> boolean addBulk(String index, String type, T object) {
+        return addBulk(index, type, Collections.singletonList(object));
+    }
+
+    public <T> boolean addBulk(String index, String type, List<T> data) {
+        return addBulk(index, type, data, BULK_PROCESSOR, Jsons::toJson, null);
+    }
+
+    public <T> boolean addBulk(String index, String type, List<T> data, 
+                               @Nonnull Function<T, String> jsonMapper,
+                               @Nullable Function<T, String> idMapper) {
+        return addBulk(index, type, data, BULK_PROCESSOR, jsonMapper, idMapper);
+    }
+
+    /**
+     * 批量添加文档
+     * 
+     * @param index
+     * @param type
+     * @param data
+     * @param config     BulkProcessorConfiguration config
+     * @param jsonMapper object to json
+     * @param idMapper   get object id, if {@code null} then non specify id to add
+     */
+    public <T> boolean addBulk(String index, String type, List<T> data, 
+                               BulkProcessorConfiguration config, 
+                               @Nonnull Function<T, String> jsonMapper,
+                               @Nullable Function<T, String> idMapper) {
+        BulkProcessor bulkProcessor = config.build(client);
+        data.stream().filter(
+            Objects::nonNull
+        ).forEach(x -> {
+            IndexRequestBuilder builder = client.prepareIndex(index, type);
+            if (idMapper != null) {
+                builder.setId(idMapper.apply(x));
+            }
+            bulkProcessor.add(builder.setSource(jsonMapper.apply(x), JSON).request());
+        });
+        bulkProcessor.flush();
+
+        try {
+            return bulkProcessor.awaitClose(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.error("bulk process error", e);
+            return false;
+        }
+    }
+
+    public <T> boolean updBulk(String index, String type, List<T> data, 
+                               @Nonnull Function<T, String> jsonMapper,
+                               @Nonnull Function<T, String> idMapper) {
+        return updBulk(index, type, data, BULK_PROCESSOR, jsonMapper, idMapper);
+    }
+
+    /**
+     * 批量更新文档
+     * 
+     * @param index
+     * @param type
+     * @param data
+     * @param config     BulkProcessorConfiguration config
+     * @param jsonMapper object to json
+     * @param idMapper   get object id
+     */
+    public <T> boolean updBulk(String index, String type, List<T> data, 
+                               BulkProcessorConfiguration config, 
+                               @Nonnull Function<T, String> jsonMapper,
+                               @Nonnull Function<T, String> idMapper) {
+        BulkProcessor bulkProcessor = config.build(client);
+        data.stream().filter(
+            Objects::nonNull
+        ).forEach(x -> {
+            bulkProcessor.add(
+                client.prepareUpdate(index, type, idMapper.apply(x))
+                .setDoc(jsonMapper.apply(x), JSON).request()
+            );
+        });
+        bulkProcessor.flush();
+
+        try {
+            return bulkProcessor.awaitClose(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.error("bulk process error", e);
+            return false;
+        }
+    }
+
+    public <T> boolean upsertBulk(String index, String type, List<T> data,
+                                  @Nonnull Function<T, String> jsonMapper,
+                                  @Nonnull Function<T, String> idMapper) {
+        return upsertBulk(index, type, data, BULK_PROCESSOR, jsonMapper, idMapper);
+    }
+
+    /**
+     * 批量更新或新增文档
+     * 
+     * @param index
+     * @param type
+     * @param data
+     * @param config     BulkProcessorConfiguration config
+     * @param jsonMapper object to json
+     * @param idMapper   get object id
+     */
+    public <T> boolean upsertBulk(String index, String type, List<T> data, 
+                                  BulkProcessorConfiguration config, 
+                                  @Nonnull Function<T, String> jsonMapper,
+                                  @Nonnull Function<T, String> idMapper) {
+        BulkProcessor bulkProcessor = config.build(client);
+        data.stream().filter(
+            Objects::nonNull
+        ).forEach(x -> {
+            String json = jsonMapper.apply(x), id = idMapper.apply(x);
+            bulkProcessor.add(
+                new UpdateRequest(index, type, id).doc(json, JSON)
+                .upsert(new IndexRequest(index, type, id).source(json, JSON))
+            );
+        });
+        bulkProcessor.flush();
+
+        try {
+            return bulkProcessor.awaitClose(120, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.error("bulk process error", e);
+            return false;
+        }
+    }
+
+    // --------------------------------------------------------------------------------prepareSearch
     /**
      * 获取搜索请求对象
      * @param indexName
@@ -648,7 +743,7 @@ public class ElasticSearchClient implements DisposableBean {
         return this.client.prepareMultiSearch();
     }
 
-    // ------------------------------------------------分页搜索---------------------------------------
+    // ------------------------------------------------FIXME：分页搜索（超过index.max_result_window会报错，待修复，推荐使用SCROLL或search-after），对服务器压力大
     /**
      * 深分页查询（针对用户实时查询）
      * @param query
@@ -703,7 +798,7 @@ public class ElasticSearchClient implements DisposableBean {
         return buildPage(search.get(), from, pageNo, pageSize, clazz);
     }
 
-    // -----------------------------------------------排名搜索-----------------------------------------------
+    // ----------------------------------------------------------------------------排名搜索
     /**
      * 排名搜索
      * @param search
@@ -726,7 +821,7 @@ public class ElasticSearchClient implements DisposableBean {
         return paginationSearch(query, 1, ranking, clazz).getRows();
     }
 
-    // -----------------------------------------------顶部搜索---------------------------------------
+    // --------------------------------------------------------------------------------------顶部搜索
     public Map<String, Object> topSearch(SearchRequestBuilder query) {
         List<Map<String, Object>> list = rankingSearch(query, 1);
         return CollectionUtils.isEmpty(list) ? null : list.get(0);
@@ -774,7 +869,7 @@ public class ElasticSearchClient implements DisposableBean {
         this.scrollSearch(scrollResp, scrollSize, callback);
     }
 
-    // ---------------------------------------------全部搜索-------------------------------------------
+    // ----------------------------------------------------------------------------------------全部搜索
     @SuppressWarnings("rawtypes")
     public List<Map> fullSearch(ESQueryBuilder query) {
         return fullSearch(query, Map.class, SCROLL_SIZE);
@@ -830,7 +925,32 @@ public class ElasticSearchClient implements DisposableBean {
         return result;
     }
 
-    // ---------------------------------------------聚合汇总-------------------------------------------
+    // ----------------------------------------------------------------------------------------search-after
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> searchAfter(SearchRequestBuilder search, String field,
+                                                 boolean asc, String value, int size) {
+        List<?> result = searchAfter(search, field, asc, value, Map.class, size);
+        return (List<Map<String, Object>>) result;
+    }
+
+    public <T> List<T> searchAfter(SearchRequestBuilder search, String field, boolean asc, 
+                                   String value, Class<T> clazz, int size) {
+        search.addSort(field, asc ? SortOrder.ASC : SortOrder.DESC)
+              .setSize(size).searchAfter(new Object[] { value });
+        SearchResponse resp = search.get();
+        SearchHit[] hits = resp.getHits().getHits();
+        if (ArrayUtils.isEmpty(hits)) {
+            return Collections.emptyList();
+        } else {
+            List<T> result = new ArrayList<>(hits.length);
+            for (SearchHit hit : hits) {
+                result.add(convertFromMap(hit.getSourceAsMap(), clazz));
+            }
+            return result;
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------聚合汇总
     public Aggregations aggregationSearch(ESQueryBuilder query) {
         return query.aggregation(client);
     }
@@ -844,17 +964,21 @@ public class ElasticSearchClient implements DisposableBean {
         return search.setSize(0).get().getAggregations();
     }
 
+    // ----------------------------------------------------------------------------------------其它
     /**
      * 销毁:关闭连接，释放资源
      */
     @Override
     public void destroy() {
-        logger.info("closing elasticsearch client.....");
-        if (client != null) try {
-            client.close();
-        } catch (Exception e) {
-            logger.error("closing elasticsearch client error.", e);
+        logger.info("Elasticsearch client closing...");
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                logger.error("closing elasticsearch client error.", e);
+            }
         }
+        logger.info("Elasticsearch client was closed.");
     }
 
     /**
@@ -865,21 +989,23 @@ public class ElasticSearchClient implements DisposableBean {
         return client != null && client.connectedNodes().size() > 0;
     }
 
-    // --------------------------------------scripts-----------------------------------------
+    // -------------------------------------------------------------------------------scripts
     /**
      * 使用脚本更新文档：painless，groovy
      * 
      * @param index
      * @param type
      * @param id
-     * @param source
+     * @param idOrCode
+     * @param params
      */
-    public void updateByGroovy(String index, String type, String id, Map<String, Object> source) {
-        UpdateRequestBuilder req = client.prepareUpdate().setIndex(index).setType(type).setId(id);
-        req.setScript(new Script(ScriptType.INLINE, "groovy", type, source)).get();
+    public void updateByGroovy(String index, String type, String id, 
+                               String idOrCode, Map<String, Object> params) {
+        UpdateRequestBuilder req = client.prepareUpdate(index, type, id);
+        req.setScript(new Script(ScriptType.INLINE, "groovy", idOrCode, params)).get();
     }
 
-    // ------------------------------------private methods------------------------------------
+    // ------------------------------------------------------------------------private methods
     /**
      * 获取索引管理客户端
      * @return IndicesAdminClient

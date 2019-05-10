@@ -13,8 +13,15 @@ import code.ponfee.es.bulk.options.BulkProcessingOptionsBuilder;
  */
 public class BulkProcessorConfiguration {
 
-    private BulkProcessingOptions options = new BulkProcessingOptionsBuilder().build();
-    private BulkProcessor.Listener listener = new LoggingBulkProcessorListener();
+    private final BulkProcessingOptions options;
+    private final BulkProcessor.Listener listener;
+
+    public BulkProcessorConfiguration() {
+        this(
+            BulkProcessingOptionsBuilder.newBuilder("default").build(), 
+            new LoggingBulkProcessorListener()
+        );
+    }
 
     public BulkProcessorConfiguration(BulkProcessingOptions options) {
         this(options, new LoggingBulkProcessorListener());

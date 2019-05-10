@@ -12,8 +12,10 @@
   <bean class="code.ponfee.commons.util.SpringContextHolder" />
 
   <bean name="esClient" class="code.ponfee.es.ElasticSearchClient">
-    <constructor-arg index="0" value="es-cluster" />
-    <constructor-arg index="1" value="10.202.4.93:9300" />
+    <!-- <constructor-arg index="0" value="es-cluster" />
+    <constructor-arg index="1" value="10.202.4.93:9300" /> -->
+    <constructor-arg index="0" value="bdp-es-orderwaybill" />
+    <constructor-arg index="1" value="10.202.116.33:9300,10.202.116.34:9300,10.202.116.35:9300" />
   </bean>
 
 </beans>

@@ -18,14 +18,18 @@ public class LoggingBulkProcessorListener implements BulkProcessor.Listener {
 
     @Override
     public void beforeBulk(long executionId, BulkRequest request) {
-        logger.debug("ExecutionId = {}, Actions = {}, Estimated Size = {}",
-                     executionId, request.numberOfActions(), request.estimatedSizeInBytes());
+        logger.debug(
+            "ExecutionId = {}, Actions = {}, Estimated Size = {}",
+            executionId, request.numberOfActions(), request.estimatedSizeInBytes()
+        );
     }
 
     @Override
     public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-        logger.debug("ExecutionId = {}, Actions = {}, Estimated Size = {}",
-                     executionId, request.numberOfActions(), request.estimatedSizeInBytes());
+        logger.debug(
+            "ExecutionId = {}, Actions = {}, Estimated Size = {}",
+            executionId, request.numberOfActions(), request.estimatedSizeInBytes()
+        );
     }
 
     @Override

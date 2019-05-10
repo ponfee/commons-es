@@ -10,8 +10,8 @@
   <name>commons-es</name>
 
   <properties>
-    <spring.version>4.3.20.RELEASE</spring.version>
-    <elasticsearch.version>5.6.14</elasticsearch.version>
+    <spring.version>4.3.23.RELEASE</spring.version>
+    <elasticsearch.version>5.6.16</elasticsearch.version>
   </properties>
 
   <dependencies>
@@ -21,7 +21,12 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>1.2.58</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
@@ -35,6 +40,38 @@
       <version>1.16-SNAPSHOT</version>
       <exclusions>
         <exclusion>
+          <groupId>dom4j</groupId>
+          <artifactId>dom4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.caucho</groupId>
+          <artifactId>hessian</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.ruedigermoeller</groupId>
+          <artifactId>fst</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>redis.clients</groupId>
+          <artifactId>jedis</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.data</groupId>
+          <artifactId>spring-data-redis</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.itextpdf</groupId>
+          <artifactId>itextpdf</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>aspose</groupId>
+          <artifactId>words-jdk16</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>antlr</groupId>
+          <artifactId>antlr</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.mozilla.intl</groupId>
           <artifactId>chardet</artifactId>
         </exclusion>
@@ -43,52 +80,8 @@
           <artifactId>cpdetector</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>aspose</groupId>
-          <artifactId>words-jdk16</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>third-jce</groupId>
           <artifactId>third-jce</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>dom4j</groupId>
-          <artifactId>dom4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>de.ruedigermoeller</groupId>
-          <artifactId>fst</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.caucho</groupId>
-          <artifactId>hessian</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework.data</groupId>
-          <artifactId>spring-data-redis</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.redisson</groupId>
-          <artifactId>redisson</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>redis.clients</groupId>
-          <artifactId>jedis</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.itextpdf</groupId>
-          <artifactId>itextpdf</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.zeroturnaround</groupId>
-          <artifactId>zt-zip</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.lmax</groupId>
-          <artifactId>disruptor</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -100,19 +93,13 @@
       <!-- <version>6.4.3</version> -->
       <version>${elasticsearch.version}</version>
     </dependency>
+
     <dependency>
       <groupId>org.nlpcn</groupId>
       <artifactId>elasticsearch-sql</artifactId>
       <version>${elasticsearch.version}</version>
       <scope>system</scope>
-      <systemPath>${pom.basedir}/lib/elasticsearch-sql-5.6.14.jar</systemPath>
-    </dependency>
-
-    <dependency>
-      <groupId>com.alibaba</groupId>
-      <artifactId>fastjson</artifactId>
-      <version>1.2.54</version>
-      <scope>test</scope>
+      <systemPath>${pom.basedir}/lib/elasticsearch-sql-5.6.16.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.alibaba</groupId>
@@ -129,5 +116,6 @@
       <artifactId>spatial4j</artifactId>
       <version>0.7</version>
     </dependency> -->
+
   </dependencies>
 </project>

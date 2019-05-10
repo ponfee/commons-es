@@ -24,14 +24,18 @@ import code.ponfee.es.exception.GetMappingFailedException;
 
 /**
  * Elastic Search Mapping
+ * 
  * @author fupf
  */
 public abstract class BaseElasticSearchMapping implements IElasticSearchMapping {
-    private final String indexType;
+
+    private final String index;
+    private final String type;
     private final Version version;
 
-    public BaseElasticSearchMapping(String indexType, Version version) {
-        this.indexType = indexType;
+    public BaseElasticSearchMapping(String index, String type, Version version) {
+        this.index = index;
+        this.type = type;
         this.version = version;
     }
 
@@ -39,16 +43,24 @@ public abstract class BaseElasticSearchMapping implements IElasticSearchMapping 
         try {
             return internalGetMapping();
         } catch(Exception e) {
-            throw new GetMappingFailedException(indexType, e);
+            throw new GetMappingFailedException(index, e);
         }
     }
 
     @Override
-    public String getIndexType() {
-        return indexType;
+    public String getIndex() {
+        return index;
     }
 
-    public @Override Version getVersion() { return version; }
+    @Override
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public  Version getVersion() {
+        return version;
+    }
 
     public XContentBuilder internalGetMapping() throws IOException {
 
@@ -68,9 +80,9 @@ public abstract class BaseElasticSearchMapping implements IElasticSearchMapping 
         );
 
         // Turn it into JsonXContent:
-        return mapping.toXContent(XContentFactory.jsonBuilder().startObject(), 
-                                  new ToXContent.MapParams(emptyMap()))
-                      .endObject();
+        return mapping.toXContent(
+            XContentFactory.jsonBuilder().startObject(), new ToXContent.MapParams(emptyMap())
+        ).endObject();
     }
 
     private Settings.Builder getSettingsBuilder() {
@@ -83,7 +95,7 @@ public abstract class BaseElasticSearchMapping implements IElasticSearchMapping 
     }
 
     private RootObjectMapper.Builder getRootObjectBuilder() {
-        RootObjectMapper.Builder rootObjectMapperBuilder = new RootObjectMapper.Builder(indexType);
+        RootObjectMapper.Builder rootObjectMapperBuilder = new RootObjectMapper.Builder(index + "/" + type);
         configureRootObjectBuilder(rootObjectMapperBuilder);
         return rootObjectMapperBuilder;
     }

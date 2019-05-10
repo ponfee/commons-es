@@ -9,9 +9,11 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
  */
 public interface IElasticSearchMapping {
 
-    XContentBuilder getMapping();
+    String getIndex();
 
-    String getIndexType();
+    String getType();
+
+    XContentBuilder getMapping();
 
     Version getVersion();
 

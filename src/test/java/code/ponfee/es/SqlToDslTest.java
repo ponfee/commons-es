@@ -25,12 +25,6 @@ public class SqlToDslTest {
         SqlElasticRequestBuilder srb = ESActionFactory.create(NoopClient.get(), sql).explain();
         System.out.println(srb.explain());
     }
-    
-    @Test
-    public void test4() throws Exception {
-        String sql = "DELETE FROM test_index where id=1";
-        System.out.println(NoopClient.get().parseSql(sql));
-    }
 
     /**
      * action.explain().getClass()                          -> SqlElasticSearchRequestBuilder
@@ -53,4 +47,15 @@ public class SqlToDslTest {
         System.out.println(source.toString());
     }
 
+    @Test
+    public void test4() throws Exception {
+        String sql = "DELETE FROM test_index where id=1";
+        System.out.println(NoopClient.get().parseSql(sql));
+    }
+
+    @Test
+    public void test5() throws Exception {
+        String sql = "SELECT skuNo, max(itemClass) t FROM test_index group by skuNo ";
+        System.out.println(NoopClient.get().parseSql(sql));
+    }
 }

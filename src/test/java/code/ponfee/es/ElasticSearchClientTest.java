@@ -1,20 +1,142 @@
 package code.ponfee.es;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.junit.Test;
 
+import code.ponfee.commons.collect.Collects;
+import code.ponfee.commons.json.Jsons;
+import code.ponfee.commons.math.Numbers;
+import code.ponfee.commons.model.Result;
+import code.ponfee.commons.util.ObjectUtils;
+import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
+
 public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
 
     @Test
+    public void test0() {
+        SearchRequestBuilder search = getBean().prepareSearch("ddt_inventory", "ddt_inventory");
+        consoleJson(getBean().rankingSearch(search, 10));
+    }
+    
+    
+    @Test
     public void test1() {
-        SearchRequestBuilder search = getBean().prepareSearch("ddt_risk_wastaged", "wastaged_city_es");
+        //SearchRequestBuilder search = getBean().prepareSearch("ddt_risk_wastaged", "wastaged_city_es");
+        SearchRequestBuilder search = getBean().prepareSearch("test_index1", "test_index1");
         consoleJson(getBean().rankingSearch(search, 10));
     }
 
+    @Test
+    public void testaddDoc() {
+        String json = Jsons.toJson(Collects.toMap("name", "tom", "age", 1, "amount", 100.2));
+        String id = getBean().addDoc("test_index1", "test_index1", json);
+        console(id);
+    }
+
+    @Test
+    public void testaddDocWithId() {
+        String json = Jsons.toJson(Collects.toMap("name", "tom", "age", 1, "amount", 100.2));
+        String id = getBean().addDoc("test_index1", "test_index1", "1", json);
+        console(id);
+    }
+
+    @Test
+    public void testaddDocs() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(Collects.toMap("name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount",  Numbers.scale(new Random().nextDouble()*10000, 2)));
+        }
+        Result<Void> res = getBean().addDocs("test_index1", "test_index1", list, Jsons::toJson, null);
+        console(res);
+    }
+
+    @Test
+    public void testaddDocsWithId() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(Collects.toMap("name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble()
+                * 10000, 2)));
+        }
+        Result<Void> res = getBean().addDocs("test_index1", "test_index1", list, Jsons::toJson, m -> ObjectUtils.uuid22());
+        console(res);
+    }
+
+    @Test
+    public void testUpdate() {
+        getBean().updDoc("test_index1", "test_index1", "1", Jsons.toJson(Collects.toMap("name", "tomxx", "age", 12, "amount", 123.2)));
+    }
+
+    @Test
+    public void testUpdate2() {
+        getBean().updDoc("test_index1", "test_index1", "1", Collects.toMap("name", "tomxx", "age", 112, "amount", 1234.2), Jsons::toJson);
+    }
+
+    @Test
+    public void testUpdates() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            list.add(Collects.toMap("name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        }
+        Result<Void> res = getBean().updDocs("test_index1", "test_index1", list, Jsons::toJson, m->ObjectUtils.uuid22());
+        consoleJson(res);
+    }
+    
+    @Test
+    public void upsertDocs() {
+        List<Map<String, Object>> list = new ArrayList<>();
+            list.add(Collects.toMap("id", "AWqb4y6Hgc3LA2ke5vkW", "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+            list.add(Collects.toMap("id", "aaaaaa", "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        Result<Void> res = getBean().upsertDocs("test_index1", "test_index1", list, m -> {Map<String, Object> x= new HashMap<>(m);x.remove("id"); return Jsons.toJson(x);}, m->(String)m.get("id"));
+        consoleJson(res);
+    }
+
+    @Test
+    public void delDoc() {
+        console(getBean().delDoc("test_index1", "test_index1", "AWqb4y6Hgc3LA2ke5vkR"));
+    }
+
+    @Test
+    public void getDocs() {
+        consoleJson(getBean().getDocs("test_index1", "test_index1", "AWqb4y6Hgc3LA2ke5vki", "AWqb4y6Hgc3LA2ke5vky"));
+    }
+    
+    @Test
+    public void addBulk() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        list.add(Collects.toMap("id", ObjectUtils.uuid22(), "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        list.add(Collects.toMap("id", ObjectUtils.uuid22(), "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        
+        console(getBean().addBulk("test_index1", "test_index1",list, new BulkProcessorConfiguration(),  m -> {Map<String, Object> x= new HashMap<>(m);x.remove("id"); return Jsons.toJson(x);}, m->(String)m.get("id")));
+    }
+    
+    
+    @Test
+    public void updBulk() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        list.add(Collects.toMap("id", "AWqb4y6Hgc3LA2ke5vkW", "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        list.add(Collects.toMap("id", "aaaaaa", "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        
+        console(getBean().updBulk("test_index1", "test_index1",list, new BulkProcessorConfiguration(),  m -> {Map<String, Object> x= new HashMap<>(m);x.remove("id"); return Jsons.toJson(x);}, m->(String)m.get("id")));
+    }
+    
+    @Test
+    public void upsertBulk() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        list.add(Collects.toMap("id", ObjectUtils.uuid22(), "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        list.add(Collects.toMap("id", "aaaaaa", "name", RandomStringUtils.randomAlphanumeric(5), "age", new Random().nextInt(99), "amount", Numbers.scale(new Random().nextDouble() * 10000, 2)));
+        
+        console(getBean().upsertBulk("test_index1", "test_index1",list, new BulkProcessorConfiguration(),  m -> {Map<String, Object> x= new HashMap<>(m);x.remove("id"); return Jsons.toJson(x);}, m->(String)m.get("id")));
+    }
     
     public static void main(String[] args) throws IOException {
         XContentBuilder mapping = XContentFactory.jsonBuilder()
