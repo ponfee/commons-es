@@ -46,8 +46,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
@@ -64,7 +62,7 @@ import code.ponfee.commons.model.Page;
 import code.ponfee.commons.model.PageHandler;
 import code.ponfee.commons.model.Result;
 import code.ponfee.commons.model.ResultCode;
-import code.ponfee.commons.reflect.CglibUtils;
+import code.ponfee.commons.reflect.BeanMaps;
 import code.ponfee.commons.util.ObjectUtils;
 import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
 import code.ponfee.es.mapping.IElasticSearchMapping;
@@ -133,8 +131,10 @@ public class ElasticSearchClient implements DisposableBean {
         return client;
     }
 
+    // ---------------------------------------------------------------------------------------------create index
     /**
      * 创建空索引： 默认setting，无mapping
+     * 
      * @param index
      * @return
      */
@@ -146,11 +146,24 @@ public class ElasticSearchClient implements DisposableBean {
      * 创建索引，默认setting，设置type的mapping
      * @param index
      * @param type
-     * @param mapping
+     * @param mappingJson
      * @return
      */
-    public boolean createIndex(String index, String type, String mapping) {
-        return createIndex(index, null, type, mapping);
+    public boolean createIndex(String index, String type, String mappingJson) {
+        return createIndex(index, type, mappingJson, null);
+    }
+
+    /**
+     * 创建索引，指定setting，设置type的mapping
+     * 
+     * @param index
+     * @param type
+     * @param mappingJson
+     * @param settingJson
+     * @return
+     */
+    public boolean createIndex(String index, String type, String mappingJson, String settingJson) {
+        return createIndex(index, type, mappingJson, Function.identity(), settingJson, Function.identity());
     }
 
     /**
@@ -160,38 +173,21 @@ public class ElasticSearchClient implements DisposableBean {
      * @param settings
      * @param type
      * @param mapping
-     * @param contentType
      * @return
      */
-    public boolean createIndex(String index, String settings, String type, 
-                               String mapping, XContentType contentType) {
-        CreateIndexRequestBuilder req = indicesAdminClient().prepareCreate(index);
-        if (settings != null) {
-            req.setSettings(settings, contentType);
-        }
-        return req.addMapping(type, mapping, contentType).get().isAcknowledged();
-    }
-
-    /**
-     * 创建索引，指定setting，设置type的mapping
-     * 
-     * @param index
-     * @param settings
-     * @param type
-     * @param mapping
-     * @return
-     */
-    public boolean createIndex(String index, String settings, String type, String mapping) {
+    public <T, E> boolean createIndex(String index, String type, 
+                                      T mapping, Function<T, String> mappingJsonMapper,
+                                      E setting, Function<E, String> settingJsonMapper) {
         // Settings settings = Settings.builder().put("index.number_of_shards", 3)
         //                                       .put("index.number_of_replicas", 2).build();
-        XContentType contentType = XContentFactory.xContentType(settings);
         CreateIndexRequestBuilder req = indicesAdminClient().prepareCreate(index);
-        if (settings != null) {
-            req.setSettings(settings, contentType);
+        if (setting != null) {
+            req.setSettings(settingJsonMapper.apply(setting), JSON);
         }
-        return req.addMapping(type, mapping, contentType).get().isAcknowledged();
+        return req.addMapping(type, mappingJsonMapper.apply(mapping), JSON).get().isAcknowledged();
     }
 
+    // ---------------------------------------------------------------------------------------------put mapping
     /**
      * XContentBuilder mapping = XContentFactory.jsonBuilder()
      * .startObject() // {
@@ -417,15 +413,15 @@ public class ElasticSearchClient implements DisposableBean {
 
     /**
      * Batch add documents with Bulk
-     *   if idMapper is {@code null} then non specify id and use POST
-     *   else specify id, use PUT
+     *   if idMapper is {@code null} then non specify id with POST
+     *   else specify id with PUT
      * 
-     * @param index
-     * @param type
-     * @param list
-     * @param jsonMapper
-     * @param idMapper
-     * @return
+     * @param index the index
+     * @param type  the type
+     * @param list  the data list
+     * @param jsonMapper the json mapper
+     * @param idMapper  the id mapper
+     * @return a Result of batch
      */
     public <T> Result<Void> addDocs(String index, String type, List<T> list, 
                                     @Nonnull Function<T, String> jsonMapper, 
@@ -489,7 +485,9 @@ public class ElasticSearchClient implements DisposableBean {
                                     @Nonnull Function<T, String> idMapper) {
         BulkRequestBuilder bulkReq = client.prepareBulk();
         list.forEach(x -> {
-            bulkReq.add(new UpdateRequest(index, type, idMapper.apply(x)).doc(jsonMapper.apply(x), JSON));
+            bulkReq.add(
+                new UpdateRequest(index, type, idMapper.apply(x)).doc(jsonMapper.apply(x), JSON)
+            );
         });
         BulkResponse resp = bulkReq.get();
         if (resp.hasFailures()) {
@@ -517,8 +515,9 @@ public class ElasticSearchClient implements DisposableBean {
         list.forEach(x -> {
             String json = jsonMapper.apply(x), id = idMapper.apply(x);
             bulkReq.add(
-                new UpdateRequest(index, type, id).doc(json, JSON)
-                    .upsert(new IndexRequest(index, type, id).source(json, JSON))
+                new UpdateRequest(index, type, id).doc(json, JSON).upsert(
+                    new IndexRequest(index, type, id).source(json, JSON)
+                )
             );
         });
 
@@ -702,8 +701,9 @@ public class ElasticSearchClient implements DisposableBean {
         ).forEach(x -> {
             String json = jsonMapper.apply(x), id = idMapper.apply(x);
             bulkProcessor.add(
-                new UpdateRequest(index, type, id).doc(json, JSON)
-                .upsert(new IndexRequest(index, type, id).source(json, JSON))
+                new UpdateRequest(index, type, id).doc(json, JSON).upsert(
+                    new IndexRequest(index, type, id).source(json, JSON)
+                )
             );
         });
         bulkProcessor.flush();
@@ -766,8 +766,7 @@ public class ElasticSearchClient implements DisposableBean {
     public <T> Page<T> paginationSearch(ESQueryBuilder query, int pageNo, 
                                         int pageSize, Class<T> clazz) {
         int from = (pageNo - 1) * pageSize;
-        SearchResponse searchResp = query.pagination(client, from, pageSize);
-        return buildPage(searchResp, from, pageNo, pageSize, clazz);
+        return buildPage(query.pagination(client, from, pageSize), from, pageNo, pageSize, clazz);
     }
 
     /**
@@ -793,8 +792,8 @@ public class ElasticSearchClient implements DisposableBean {
     public <T> Page<T> paginationSearch(SearchRequestBuilder search, int pageNo, 
                                         int pageSize, Class<T> clazz) {
         int from = (pageNo - 1) * pageSize;
-        search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH); // 深度分布
-        search.setFrom(from).setSize(pageSize).setExplain(false);
+        search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH) // 深度分布
+              .setFrom(from).setSize(pageSize).setExplain(false);
         return buildPage(search.get(), from, pageNo, pageSize, clazz);
     }
 
@@ -1089,7 +1088,7 @@ public class ElasticSearchClient implements DisposableBean {
         } else if (clazz.isAssignableFrom(data.getClass())) {
             return (T) data;
         } else {
-            return CglibUtils.map2bean(data, clazz);
+            return BeanMaps.CGLIB.toBean(data, clazz);
         }
     }
 

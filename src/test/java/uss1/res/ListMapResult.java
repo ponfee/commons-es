@@ -6,7 +6,7 @@ import java.util.Map;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
-import code.ponfee.commons.reflect.CglibUtils;
+import code.ponfee.commons.reflect.BeanMaps;
 
 /**
  * USS list map result
@@ -37,7 +37,7 @@ public class ListMapResult extends ListResult<Map<String, Object>> {
      * @return
      */
     public <E> ListResult<E> transform(Class<E> targetType) {
-        return super.transform(map -> CglibUtils.map2bean(map, targetType));
+        return super.transform(map -> BeanMaps.CGLIB.toBean(map, targetType));
     }
 
     @Override
