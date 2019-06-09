@@ -105,12 +105,13 @@ public class ElasticSearchClient implements DisposableBean {
      */
     public static TransportClient createClient(String clusterName, String clusterNodes) {
         Settings settings = Settings.builder()
-                                    .put("cluster.name", clusterName)
-                                    .put("client.transport.sniff", true) // 启动嗅探功能，这样只需要指定集群中的某一个节点(不一定是主节点)，然后会加载集群中的其他节点，这样只要程序不停即使此节点宕机仍然可以连接到其他节点。
-                                    .put("client.transport.ignore_cluster_name", false)
-                                    //.put("client.transport.ping_timeout", "15s")
-                                    //.put("client.transport.nodes_sampler_interval", "5s")
-                                    .build();
+            .put("cluster.name", clusterName)
+            .put("client.transport.sniff", true) // 启动嗅探功能，这样只需要指定集群中的某一个节点(不一定是主节点)，
+                                                 // 然后会加载集群中的其他节点，这样只要程序不停即使此节点宕机仍然可以连接到其他节点。
+            .put("client.transport.ignore_cluster_name", false)
+            //.put("client.transport.ping_timeout", "15s")
+            //.put("client.transport.nodes_sampler_interval", "5s")
+            .build();
         TransportClient client = new PreBuiltTransportClient(settings);
         logger.info("Init ElasticSearch Client Start: {}, {}", clusterName, clusterNodes);
         Stream.of(split(clusterNodes, ",")).forEach(clusterNode -> {
