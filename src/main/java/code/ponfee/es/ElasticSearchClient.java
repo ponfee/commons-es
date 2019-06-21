@@ -62,6 +62,8 @@ import code.ponfee.commons.model.Page;
 import code.ponfee.commons.model.PageHandler;
 import code.ponfee.commons.model.Result;
 import code.ponfee.commons.model.ResultCode;
+import code.ponfee.commons.model.SearchAfter;
+import code.ponfee.commons.model.SortField;
 import code.ponfee.commons.reflect.BeanMaps;
 import code.ponfee.commons.util.ObjectUtils;
 import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
@@ -927,16 +929,24 @@ public class ElasticSearchClient implements DisposableBean {
 
     // ----------------------------------------------------------------------------------------search-after
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> searchAfter(SearchRequestBuilder search, String field,
-                                                 boolean asc, String value, int size) {
-        List<?> result = searchAfter(search, field, asc, value, Map.class, size);
+    public <E> List<Map<String, Object>> searchAfter(SearchRequestBuilder search, int size, 
+                                                     SearchAfter<E>... searchAfters) {
+        List<?> result = searchAfter(search, size, Map.class, searchAfters);
         return (List<Map<String, Object>>) result;
     }
 
-    public <T> List<T> searchAfter(SearchRequestBuilder search, String field, boolean asc, 
-                                   String value, Class<T> clazz, int size) {
-        search.addSort(field, asc ? SortOrder.ASC : SortOrder.DESC)
-              .setSize(size).searchAfter(new Object[] { value });
+    @SuppressWarnings("unchecked")
+    public <T, E> List<T> searchAfter(SearchRequestBuilder search, int size, 
+                                      Class<T> clazz, SearchAfter<E>... searchAfters) {
+        Object[] values = new Object[searchAfters.length];
+        int i = 0;
+        for (SearchAfter<E> sa : searchAfters) {
+            SortField sf = sa.getSortField();
+            values[i++] = sa.getValue();
+            search.addSort(sf.getField(), SortOrder.fromString(sf.getSortOrder().name()));
+        }
+        search.searchAfter(values).setSize(size);
+
         SearchResponse resp = search.get();
         SearchHit[] hits = resp.getHits().getHits();
         if (ArrayUtils.isEmpty(hits)) {

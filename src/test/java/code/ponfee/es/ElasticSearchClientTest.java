@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -17,6 +20,9 @@ import code.ponfee.commons.collect.Collects;
 import code.ponfee.commons.json.Jsons;
 import code.ponfee.commons.math.Numbers;
 import code.ponfee.commons.model.Result;
+import code.ponfee.commons.model.SearchAfter;
+import code.ponfee.commons.model.SortField;
+import code.ponfee.commons.model.SortOrder;
 import code.ponfee.commons.util.ObjectUtils;
 import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
 
@@ -24,11 +30,29 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
 
     @Test
     public void test0() {
-        SearchRequestBuilder search = getBean().prepareSearch("ddt_inventory", "ddt_inventory");
+        SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
         consoleJson(getBean().rankingSearch(search, 10));
     }
-    
-    
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void test20() {
+        Object value = "0"; // 0L
+        //String field = "waybillNo";
+        String field = "consignedTime";
+        int size = 50;
+        List<Map<String, Object>> result;
+        do {
+            SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
+            search.setFetchSource(new String[] { "waybillNo", "consignedTime" }, null);
+            result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(SortOrder.ASC, field), value));
+            if (!result.isEmpty()) {
+                value = result.get(result.size() - 1).get(field);
+            }
+            System.out.println(result.stream().map(x -> Objects.toString(x.get(field))).collect(Collectors.joining(",")));
+        } while (CollectionUtils.isNotEmpty(result) && result.size() >= size);
+    }
+
     @Test
     public void test1() {
         //SearchRequestBuilder search = getBean().prepareSearch("ddt_risk_wastaged", "wastaged_city_es");
