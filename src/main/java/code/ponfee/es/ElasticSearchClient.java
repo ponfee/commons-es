@@ -12,7 +12,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
@@ -958,6 +960,32 @@ public class ElasticSearchClient implements DisposableBean {
             }
             return result;
         }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public <E> void searchEnd(Supplier<SearchRequestBuilder> search, int size, 
+                                 Consumer<List<Map>> consumer, 
+                                 SearchAfter<E>... searchStarts) {
+        searchEnd(search, size, Map.class, consumer, searchStarts);
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    public <T, E> void searchEnd(Supplier<SearchRequestBuilder> search, int size, Class<T> clazz, 
+                                 Consumer<List<T>> consumer, SearchAfter<E>... searchStarts) {
+        List<T> each;
+        do {
+            each = searchAfter(search.get(), size, clazz, searchStarts);
+            if (!each.isEmpty()) {
+                T endRow = each.get(each.size() - 1);
+                for (int i = 0; i < searchStarts.length; i++) {
+                    SearchAfter<E> sa = searchStarts[i];
+                    searchStarts[i] = sa.copy(
+                        (E) ObjectUtils.getValue(endRow, sa.getSortField().getField())
+                    );
+                }
+                consumer.accept(each);
+            }
+        } while (each.size() == size);
     }
 
     // ----------------------------------------------------------------------------------------聚合汇总

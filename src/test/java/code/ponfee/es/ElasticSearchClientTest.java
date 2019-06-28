@@ -5,15 +5,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
 
 import code.ponfee.commons.collect.Collects;
@@ -36,25 +36,49 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void test20() {
-        Object value = "0"; // 0L
-        //String field = "waybillNo";
-        String field = "consignedTime";
-        int size = 50;
-        List<Map<String, Object>> result;
-        do {
-            SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
-            search.setFetchSource(new String[] { "waybillNo", "consignedTime" }, null);
-            result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(SortOrder.ASC, field), value));
-            if (!result.isEmpty()) {
-                value = result.get(result.size() - 1).get(field);
-            }
-            System.out.println(result.stream().map(x -> Objects.toString(x.get(field))).collect(Collectors.joining(",")));
-        } while (CollectionUtils.isNotEmpty(result) && result.size() >= size);
+    public void test1() {
+        int count = 0;
+        try {
+            Object value1 = "", value2 = 0; // 0L
+            String field1 = "waybillNo", field2 = "consignedTime";
+            int size = 997;
+            List<Map<String, Object>> result;
+            do {
+                SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
+                search.setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2)));
+                search.setFetchSource(new String[] { field1,field2 }, null);
+                result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1), new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2));
+                if (!result.isEmpty()) {
+                    value1 = result.get(result.size() - 1).get(field1);
+                    value2 = result.get(result.size() - 1).get(field2);
+                    count += result.size();
+                }
+                //System.out.println(result.stream().map(x -> Objects.toString(x.get(field))).collect(Collectors.joining(",")));
+            } while (CollectionUtils.isNotEmpty(result) && result.size() >= size);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(count);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void test1() {
+    public void test2() {
+        Object value1 = "", value2 = 0; // 0L
+        String field1 = "waybillNo", field2 = "consignedTime";
+        int size = 997;
+        LongAdder la = new LongAdder();
+        getBean().searchEnd(
+            () ->  getBean().prepareSearch("ddt_waybill", "ddt_waybill").setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2))).setFetchSource(new String[] { field1, field2 }, null), size, 
+            list -> la.add(list.size()), 
+            new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1),
+            new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2)
+        );
+        System.out.println(la.longValue());
+    }
+    
+    @Test
+    public void test3() {
         //SearchRequestBuilder search = getBean().prepareSearch("ddt_risk_wastaged", "wastaged_city_es");
         SearchRequestBuilder search = getBean().prepareSearch("test_index1", "test_index1");
         consoleJson(getBean().rankingSearch(search, 10));
