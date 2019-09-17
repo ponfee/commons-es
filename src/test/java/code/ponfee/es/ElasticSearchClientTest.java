@@ -155,7 +155,7 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
 
     @Test
     public void getDocs() {
-        consoleJson(getBean().getDocs("test_index1", "test_index1", "AWqb4y6Hgc3LA2ke5vki", "AWqb4y6Hgc3LA2ke5vky"));
+        consoleJson(getBean().getDocs("test_index1", "test_index1", new String[] {"AWqb4y6Hgc3LA2ke5vki", "AWqb4y6Hgc3LA2ke5vky", "xxx"}, new String[] {"name"}));
     }
     
     @Test

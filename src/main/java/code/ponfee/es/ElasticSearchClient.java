@@ -32,6 +32,8 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequest.Item;
+import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -53,6 +55,7 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.slf4j.Logger;
@@ -80,6 +83,8 @@ import code.ponfee.es.mapping.IElasticSearchMapping;
  * @author fupf
  */
 public class ElasticSearchClient implements DisposableBean {
+
+    public static final String _ID = "_id";
 
     static final TimeValue SCROLL_TIMEOUT = TimeValue.timeValueSeconds(120); // 2 minutes
     private static final int SCROLL_SIZE = 10000; // 默认滚动数据量
@@ -550,7 +555,7 @@ public class ElasticSearchClient implements DisposableBean {
     @SuppressWarnings("unchecked")
     public Map<String, Object> getDoc(String index, String type, String id) {
         GetResponse response = client.prepareGet(index, type, id).get();
-        return convertFromMap(response.getSource(), Map.class);
+        return convertFromMap(response.getSource(), response.getId(), Map.class);
     }
 
     /**
@@ -563,30 +568,48 @@ public class ElasticSearchClient implements DisposableBean {
      */
     public <T> T getDoc(String index, String type, Class<T> clazz, String id) {
         GetResponse response = client.prepareGet(index, type, id).get();
-        return convertFromMap(response.getSource(), clazz);
+        return convertFromMap(response.getSource(), response.getId(), clazz);
+    }
+
+    public List<Map<String, Object>> getDocs(String index, String type, String[] ids) {
+        return getDocs(index, type, ids, null);
     }
 
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getDocs(String index, String type, String... ids) {
-        List<?> list = getDocs(index, type, Map.class, ids);
-        return (List<Map<String, Object>>) list;
+    public List<Map<String, Object>> getDocs(String index, String type, String[] ids, String[] fields) {
+        return (List<Map<String, Object>>) (List<?>) getDocs(index, type, Map.class, ids, fields);
+    }
+
+    public <T> List<T> getDocs(String index, String type, Class<T> clazz, String[] ids) {
+        return getDocs(index, type, clazz, ids, null);
     }
 
     /**
      * 批量获取（mget）
+     * 
      * @param index
      * @param type
      * @param clazz
      * @param ids
      * @return return the documents of specific id array
      */
-    public <T> List<T> getDocs(String index, String type, Class<T> clazz, String... ids) {
-        MultiGetResponse multiResp = client.prepareMultiGet().add(index, type, ids).get();
+    public <T> List<T> getDocs(String index, String type, Class<T> clazz, String[] ids, String[] fields) {
+        MultiGetRequestBuilder reqBuilder = client.prepareMultiGet();
+        if (ArrayUtils.isEmpty(fields)) {
+            for (String id : ids) {
+                reqBuilder.add(index, type, id);
+            }
+        } else {
+            for (String id : ids) {
+                reqBuilder.add(new Item(index, type, id).fetchSourceContext(new FetchSourceContext(true, fields, null)));
+            }
+        }
+        MultiGetResponse multiResp = reqBuilder.get();
         List<T> result = new ArrayList<>(ids.length);
         for (MultiGetItemResponse itemResp : multiResp) {
             GetResponse response = itemResp.getResponse();
             if (response.isExists()) {
-                result.add(convertFromMap(response.getSource(), clazz));
+                result.add(convertFromMap(response.getSource(), response.getId(), clazz));
             }
         }
         return result;
@@ -896,7 +919,7 @@ public class ElasticSearchClient implements DisposableBean {
             scrollResp, eachScrollSize, 
             (searchHits, totalRecords, totalPages, pageNo) -> {
                 for (SearchHit hit : searchHits.getHits()) {
-                    result.add(convertFromMap(hit.getSourceAsMap(), clazz));
+                    result.add(convertFromMap(hit.getSourceAsMap(), hit.getId(), clazz));
                 }
             }
         );
@@ -923,7 +946,7 @@ public class ElasticSearchClient implements DisposableBean {
         List<T> result = new ArrayList<>((int) scrollResp.getHits().getTotalHits());
         this.scrollSearch(scrollResp, eachScrollSize, (searchHits, totalRecords, totalPages, pageNo) -> {
             for (SearchHit hit : searchHits.getHits()) {
-                result.add(convertFromMap(hit.getSourceAsMap(), clazz));
+                result.add(convertFromMap(hit.getSourceAsMap(), hit.getId(), clazz));
             }
         });
         return result;
@@ -956,7 +979,7 @@ public class ElasticSearchClient implements DisposableBean {
         } else {
             List<T> result = new ArrayList<>(hits.length);
             for (SearchHit hit : hits) {
-                result.add(convertFromMap(hit.getSourceAsMap(), clazz));
+                result.add(convertFromMap(hit.getSourceAsMap(), hit.getId(), clazz));
             }
             return result;
         }
@@ -1067,7 +1090,7 @@ public class ElasticSearchClient implements DisposableBean {
         long total = hits.getTotalHits();
         List<T> result = new ArrayList<>(hits.getHits().length);
         for (SearchHit hit : hits) {
-            result.add(convertFromMap(hit.getSourceAsMap(), clazz));
+            result.add(convertFromMap(hit.getSourceAsMap(), hit.getId(), clazz));
         }
 
         Page<T> page = Page.of(result);
@@ -1121,10 +1144,13 @@ public class ElasticSearchClient implements DisposableBean {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T convertFromMap(Map<String, Object> data, Class<T> clazz) {
+    private static <T> T convertFromMap(Map<String, Object> data, String id, Class<T> clazz) {
         if (data == null) {
             return null;
-        } else if (clazz.isAssignableFrom(data.getClass())) {
+        } 
+
+        data.put(_ID, id);
+        if (clazz.isAssignableFrom(data.getClass())) {
             return (T) data;
         } else {
             return BeanMaps.CGLIB.toBean(data, clazz);
