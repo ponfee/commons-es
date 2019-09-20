@@ -84,9 +84,10 @@ import code.ponfee.es.mapping.IElasticSearchMapping;
  */
 public class ElasticSearchClient implements DisposableBean {
 
-    public static final String _ID = "_id";
+    public static final String DOCUMENT_ID = "_id";
 
     static final TimeValue SCROLL_TIMEOUT = TimeValue.timeValueSeconds(120); // 2 minutes
+
     private static final int SCROLL_SIZE = 10000; // 默认滚动数据量
     private static final BulkProcessorConfiguration BULK_PROCESSOR = new BulkProcessorConfiguration();
 
@@ -116,11 +117,12 @@ public class ElasticSearchClient implements DisposableBean {
         Settings settings = Settings.builder()
             .put("cluster.name", clusterName)
             .put("client.transport.sniff", true) // 启动嗅探功能，这样只需要指定集群中的某一个节点(不一定是主节点)，
-                                                 // 然后会加载集群中的其他节点，这样只要程序不停即使此节点宕机仍然可以连接到其他节点。
+                                                 // 然后会加载集群中的其他节点，这样只要程序不停即使此节点宕机仍然可以连接到其他节点
             .put("client.transport.ignore_cluster_name", false)
             //.put("client.transport.ping_timeout", "15s")
             //.put("client.transport.nodes_sampler_interval", "5s")
             .build();
+
         TransportClient client = new PreBuiltTransportClient(settings);
         logger.info("Init ElasticSearch Client Start: {}, {}", clusterName, clusterNodes);
         Stream.of(split(clusterNodes, ",")).forEach(clusterNode -> {
@@ -605,7 +607,7 @@ public class ElasticSearchClient implements DisposableBean {
             }
         }
         MultiGetResponse multiResp = reqBuilder.get();
-        List<T> result = new ArrayList<>(ids.length);
+        List<T> result = new ArrayList<>(multiResp.getResponses().length);
         for (MultiGetItemResponse itemResp : multiResp) {
             GetResponse response = itemResp.getResponse();
             if (response.isExists()) {
@@ -771,26 +773,35 @@ public class ElasticSearchClient implements DisposableBean {
         return this.client.prepareMultiSearch();
     }
 
-    // ------------------------------------------------FIXME：分页搜索（超过index.max_result_window会报错，待修复，推荐使用SCROLL或search-after），对服务器压力大
+    // ----------------------------------------------------------------------------------------分页搜索
     /**
      * 深分页查询（针对用户实时查询）
+     * 
      * @param query
      * @param pageNo
      * @param pageSize
      * @return  page result and map of row record
+     * 
+     * @deprecated 分页搜索对服务器压力大（超过index.max_result_window会报错）, 
+     *             Use {@link #searchAfter(SearchRequestBuilder, int, SearchAfter...)} Or {@link #scrollSearch(ESQueryBuilder, int, ScrollSearchCallback)} instead
      */
+    @Deprecated
     public Page<Map<String, Object>> paginationSearch(ESQueryBuilder query, int pageNo, int pageSize) {
         return this.paginationSearch(query, pageNo, pageSize, Map.class).copy();
     }
 
     /**
      * 深分页查询（针对用户实时查询）
+     * 
      * @param query      查询条件
      * @param pageNo     页码
      * @param pageSize   页大小
      * @param clazz      返回的行数据类型
      * @return
+     * 
+     * @deprecated Use {@link #searchAfter(SearchRequestBuilder, int, SearchAfter...)} Or {@link #scrollSearch(ESQueryBuilder, int, ScrollSearchCallback)} instead
      */
+    @Deprecated
     public <T> Page<T> paginationSearch(ESQueryBuilder query, int pageNo, 
                                         int pageSize, Class<T> clazz) {
         int from = (pageNo - 1) * pageSize;
@@ -803,7 +814,10 @@ public class ElasticSearchClient implements DisposableBean {
      * @param pageNo    页码
      * @param pageSize  页大小
      * @return
+     * 
+     * @deprecated Use {@link #searchAfter(SearchRequestBuilder, int, SearchAfter...)} Or {@link #scrollSearch(ESQueryBuilder, int, ScrollSearchCallback)} instead
      */
+    @Deprecated
     public Page<Map<String, Object>> paginationSearch(SearchRequestBuilder search, 
                                                       int pageNo, int pageSize) {
         return this.paginationSearch(search, pageNo, pageSize, Map.class).copy();
@@ -816,7 +830,10 @@ public class ElasticSearchClient implements DisposableBean {
      * @param pageSize  size of page
      * @param clazz     row object type
      * @return page result
+     * 
+     * @deprecated Use {@link #searchAfter(SearchRequestBuilder, int, SearchAfter...)} Or {@link #scrollSearch(ESQueryBuilder, int, ScrollSearchCallback)} instead
      */
+    @Deprecated
     public <T> Page<T> paginationSearch(SearchRequestBuilder search, int pageNo, 
                                         int pageSize, Class<T> clazz) {
         int from = (pageNo - 1) * pageSize;
@@ -869,7 +886,7 @@ public class ElasticSearchClient implements DisposableBean {
         return CollectionUtils.isEmpty(list) ? null : list.get(0);
     }
 
-    // -----------------------------------------------滚动搜索---------------------------------------
+    // --------------------------------------------------------------------------------------滚动搜索
     /**
      * 滚动搜索（游标查询，针对大数据量甚至是全表查询时使用）
      * 符合条件的数据全部查询（不分页场景使用）
@@ -1149,7 +1166,7 @@ public class ElasticSearchClient implements DisposableBean {
             return null;
         } 
 
-        data.put(_ID, id);
+        data.put(DOCUMENT_ID, id);
         if (clazz.isAssignableFrom(data.getClass())) {
             return (T) data;
         } else {
