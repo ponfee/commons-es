@@ -531,6 +531,7 @@ public class ElasticSearchClient implements DisposableBean {
                     new IndexRequest(index, type, id).source(json, JSON)
                 )
             );
+            // client.prepareUpdate(index, type, id).setDoc(json, JSON).setDocAsUpsert(true);
         });
 
         BulkResponse resp = bulkReq.get();
