@@ -94,13 +94,20 @@ public class ElasticSearchClient implements DisposableBean {
     private static Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class);
 
     private final TransportClient client; // ES集群客户端
+    private final BeanMaps convertor; // ES集群客户端
+
+    public ElasticSearchClient(String clusterName, String clusterNodes) {
+        this(clusterName, clusterNodes, BeanMaps.CGLIB);
+    }
 
     /**
      * @param clusterName  集群名称：es-cluster
      * @param clusterNodes 集群节点列表：ip1:port1,ip2:port2
+     * @param BeanMaps     the BeanMaps, convert elasticsearch result source map to target bean
      */
-    public ElasticSearchClient(String clusterName, String clusterNodes) {
-        client = createClient(clusterName, clusterNodes);
+    public ElasticSearchClient(String clusterName, String clusterNodes, BeanMaps convertor) {
+        this.client = createClient(clusterName, clusterNodes);
+        this.convertor = convertor;
     }
 
     /**
@@ -1162,7 +1169,7 @@ public class ElasticSearchClient implements DisposableBean {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T convertFromMap(Map<String, Object> data, String id, Class<T> clazz) {
+    private <T> T convertFromMap(Map<String, Object> data, String id, Class<T> clazz) {
         if (data == null) {
             return null;
         } 
@@ -1171,7 +1178,7 @@ public class ElasticSearchClient implements DisposableBean {
         if (clazz.isAssignableFrom(data.getClass())) {
             return (T) data;
         } else {
-            return BeanMaps.CGLIB.toBean(data, clazz);
+            return this.convertor.toBean(data, clazz);
         }
     }
 
