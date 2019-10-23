@@ -41,9 +41,12 @@ public class BulkProcessorConfiguration {
         return listener;
     }
 
+    // bulk.flush.max.actions：刷新前缓冲的最大动作量
+    // bulk.flush.max.size.mb：刷新前缓冲区的最大数据大小（以兆字节为单位）
+    // bulk.flush.interval.ms：无论缓冲操作的数量或大小如何都要刷新的时间间隔
     public BulkProcessor build(final Client client) {
         return BulkProcessor.builder(client, listener)
-                            .setConcurrentRequests(options.getConcurrentRequests())
+                            .setConcurrentRequests(options.getConcurrentRequests()) // 0
                             .setBulkActions(options.getBulkActions())
                             .setBulkSize(options.getBulkSize())
                             .setFlushInterval(options.getFlushInterval())
