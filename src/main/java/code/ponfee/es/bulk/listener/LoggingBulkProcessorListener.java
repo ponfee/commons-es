@@ -8,7 +8,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 批处理监听
- * @author fupf
+ * 
+ * @author Ponfee
  */
 public class LoggingBulkProcessorListener implements BulkProcessor.Listener {
 

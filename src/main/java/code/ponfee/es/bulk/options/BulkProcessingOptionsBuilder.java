@@ -7,17 +7,18 @@ import org.elasticsearch.common.unit.TimeValue;
 
 /**
  * 批处理操作构建类
- * @author fupf
+ * 
+ * @author Ponfee
  */
 public class BulkProcessingOptionsBuilder {
 
     private final String name;
 
     private int concurrentRequests = 1;
-    private int bulkActions = 2000;
-    private ByteSizeValue bulkSize = new ByteSizeValue(5, ByteSizeUnit.MB);
+    private int bulkActions = 1000;
+    private ByteSizeValue bulkSize = new ByteSizeValue(10, ByteSizeUnit.MB);
     private BackoffPolicy backoffPolicy = BackoffPolicy.exponentialBackoff();
-    private TimeValue flushInterval = null;
+    private TimeValue flushInterval = TimeValue.timeValueSeconds(1);
 
     private BulkProcessingOptionsBuilder(String name) {
         this.name = name;
@@ -54,7 +55,8 @@ public class BulkProcessingOptionsBuilder {
 
     public BulkProcessingOptions build() {
         return new BulkProcessingOptions(
-            name, concurrentRequests, bulkActions, bulkSize, flushInterval, backoffPolicy
+            name, concurrentRequests, bulkActions, 
+            bulkSize, flushInterval, backoffPolicy
         );
     }
 }

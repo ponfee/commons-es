@@ -6,7 +6,8 @@ import org.elasticsearch.common.unit.TimeValue;
 
 /**
  * 批处理操作类
- * @author fupf
+ * 
+ * @author Ponfee
  */
 public class BulkProcessingOptions {
 

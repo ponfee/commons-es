@@ -5,7 +5,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 
 /**
  * mapping接口类
- * @author fupf
+ * 
+ * @author Ponfee
  */
 public interface IElasticSearchMapping {
 

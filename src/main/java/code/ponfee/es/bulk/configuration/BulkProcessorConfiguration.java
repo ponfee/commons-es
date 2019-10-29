@@ -9,7 +9,8 @@ import code.ponfee.es.bulk.options.BulkProcessingOptionsBuilder;
 
 /**
  * bulk processor配置类
- * @author fupf
+ * 
+ * @author Ponfee
  */
 public class BulkProcessorConfiguration {
 

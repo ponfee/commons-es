@@ -4,7 +4,8 @@ import org.elasticsearch.search.SearchHits;
 
 /**
  * 滚动搜索回调函数
- * @author fupf
+ * 
+ * @author Ponfee
  */
 @FunctionalInterface
 public interface ScrollSearchCallback {
