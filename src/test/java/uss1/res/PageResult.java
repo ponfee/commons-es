@@ -60,7 +60,7 @@ public class PageResult<T> extends BaseResult {
     public void process(Consumer<T> action) {
         Preconditions.checkArgument(action != null);
         if (page != null) {
-            page.process(action);
+            page.forEach(action);
         }
     }
 
@@ -74,7 +74,7 @@ public class PageResult<T> extends BaseResult {
         Preconditions.checkArgument(transformer != null);
         PageResult<E> result = new PageResult<>(this);
         if (page != null) {
-            result.setPage(this.page.transform(transformer));
+            result.setPage(this.page.map(transformer));
         }
         return result;
     }
