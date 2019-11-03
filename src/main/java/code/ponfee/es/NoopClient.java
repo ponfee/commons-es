@@ -24,7 +24,7 @@ import org.nlpcn.es4sql.query.SqlElasticRequestBuilder;
  */
 public final class NoopClient extends AbstractClient {
 
-    private static final NoopClient NOOP_CLIENT = new NoopClient();
+    private static final NoopClient SINGLETON = new NoopClient();
 
     private NoopClient() {
         //super(Settings.EMPTY, new ThreadPool(Settings.EMPTY));
@@ -32,7 +32,7 @@ public final class NoopClient extends AbstractClient {
     }
 
     public static NoopClient get() {
-        return NOOP_CLIENT;
+        return SINGLETON;
     }
 
     @Override
