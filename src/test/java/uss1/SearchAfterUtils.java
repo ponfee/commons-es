@@ -44,7 +44,7 @@ public class SearchAfterUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> void searchEnd(BoolQueryBuilder query, int size,
+    public static <E> void searchAll(BoolQueryBuilder query, int size,
                                      Consumer<SearchSourceBuilder> prepare, 
                                      Consumer<List<Map<String, Object>>> consumer, 
                                      SearchAfter<E>... searchStarts) {
@@ -64,7 +64,7 @@ public class SearchAfterUtils {
         } while (each.size() == size);
     }
 
-    public static BaseResult search(SearchPlatform searcher, String params, Map<String, String> headers) {
+    private static BaseResult search(SearchPlatform searcher, String params, Map<String, String> headers) {
         return SearchRequestBuilder
                 .newBuilder(searcher, "URL", "appId", "searchId")
                 .params(params).headers(headers).build()

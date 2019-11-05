@@ -22,16 +22,16 @@ import org.nlpcn.es4sql.query.SqlElasticRequestBuilder;
  * 
  * @author Ponfee
  */
-public final class NoopClient extends AbstractClient {
+public final class SqlParserClient extends AbstractClient {
 
-    private static final NoopClient SINGLETON = new NoopClient();
+    private static final SqlParserClient SINGLETON = new SqlParserClient();
 
-    private NoopClient() {
+    private SqlParserClient() {
         //super(Settings.EMPTY, new ThreadPool(Settings.EMPTY));
         super(Settings.EMPTY, null);
     }
 
-    public static NoopClient get() {
+    public static SqlParserClient get() {
         return SINGLETON;
     }
 

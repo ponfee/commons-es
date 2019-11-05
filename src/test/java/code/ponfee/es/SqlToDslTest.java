@@ -15,14 +15,14 @@ public class SqlToDslTest {
     @Test
     public void test1() throws Exception {
         String sql = "SELECT case when gender is null then 'aaa'  else gender  end  test , cust_code FROM elasticsearch-sql_test_index";
-        String dsl = ESActionFactory.create(NoopClient.get(), sql).explain().explain();
+        String dsl = ESActionFactory.create(SqlParserClient.get(), sql).explain().explain();
         System.out.println(dsl);
     }
 
     @Test
     public void test2() throws Exception {
         String sql = "SELECT COUNT(*) AS mycount FROM elasticsearch-sql_test_index/account";
-        SqlElasticRequestBuilder srb = ESActionFactory.create(NoopClient.get(), sql).explain();
+        SqlElasticRequestBuilder srb = ESActionFactory.create(SqlParserClient.get(), sql).explain();
         System.out.println(srb.explain());
     }
 
@@ -36,7 +36,7 @@ public class SqlToDslTest {
     @Test
     public void test3() throws Exception {
         String sql = "SELECT case when gender is null then 'aaa'  else gender  end  test , cust_code FROM elasticsearch-sql_test_index";
-        SqlElasticSearchRequestBuilder sqlSearch = (SqlElasticSearchRequestBuilder) ESActionFactory.create(NoopClient.get(), sql).explain();
+        SqlElasticSearchRequestBuilder sqlSearch = (SqlElasticSearchRequestBuilder) ESActionFactory.create(SqlParserClient.get(), sql).explain();
         //sqlSearch.explain(); // SearchRequestBuilder.toString()
         SearchRequestBuilder search = (SearchRequestBuilder) sqlSearch.getBuilder();
 
@@ -50,12 +50,12 @@ public class SqlToDslTest {
     @Test
     public void test4() throws Exception {
         String sql = "DELETE FROM test_index where id=1";
-        System.out.println(NoopClient.get().parseSql(sql));
+        System.out.println(SqlParserClient.get().parseSql(sql));
     }
 
     @Test
     public void test5() throws Exception {
         String sql = "SELECT skuNo, max(itemClass) t FROM test_index group by skuNo ";
-        System.out.println(NoopClient.get().parseSql(sql));
+        System.out.println(SqlParserClient.get().parseSql(sql));
     }
 }
