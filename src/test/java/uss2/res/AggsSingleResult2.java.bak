@@ -1,4 +1,4 @@
-package uss.res;
+package uss2.res;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -7,14 +7,14 @@ import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.sf.ddt.es.uss.res.BaseResult;
+import uss2.es.uss.res.BaseResult;
 
 import uss.res.AggsFlatResult2.AggsFlatItem;
 
 /**
  * USS aggs flat result
  * 
- * @author 01367825
+ * @author Ponfee
  */
 public class AggsSingleResult2 extends BaseResult {
 

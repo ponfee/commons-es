@@ -8,7 +8,7 @@ import java.util.List;
  * @author Ponfee
  */
 @FunctionalInterface
-public interface ScrollSearchConsumer<T> {
+public interface ScrollSearchCallback<T> {
 
     /**
      * 滚动到下一页

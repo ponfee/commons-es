@@ -1,14 +1,14 @@
-package uss.res;
+package uss2.res;
 
 import java.io.Serializable;
 import java.util.Map;
 
-import com.sf.ddt.es.uss.res.BaseResult;
+import uss2.es.uss.res.BaseResult;
 
 /**
  * USS aggs tree result
  * 
- * @author 01367825
+ * @author Ponfee
  */
 public class AggsTreeResult2 extends BaseResult {
 

@@ -60,7 +60,7 @@ public class SearchRequest {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> BaseResult getAsResult() {
+    public <T, E extends BaseResult> E getAsResult() {
         if (hasHeader(HEAD_SEARCH_ALL)) {
             Holder<BaseResult> retn = Holder.empty();
             List<T> data = new LinkedList<>();
@@ -73,18 +73,18 @@ public class SearchRequest {
             if (   result instanceof ScrollResult
                 || result instanceof PageResult
             ) {
-                return new ListResult<>(result, data);
+                return (E) new ListResult<>(result, data);
             } else {
-                return result;
+                return (E) result;
             }
         }
 
-        return ResultConvertor.of(headers).convert(
+        return (E) ResultConvertor.of(headers).convert(
             searcher.getAsResult(url, appId, searchId, params, headers)
         );
     }
 
-    public <T> void scrollSearch(ScrollSearchConsumer<T> callback) {
+    public <T> void scrollSearch(ScrollSearchCallback<T> callback) {
         scrollSearch(null, callback); // accept null: prevent non scroll search
     }
 
@@ -103,7 +103,7 @@ public class SearchRequest {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void scrollSearch(Consumer<BaseResult> accept, ScrollSearchConsumer<T> callback) {
+    private <T> void scrollSearch(Consumer<BaseResult> accept, ScrollSearchCallback<T> callback) {
         BaseResult result = searcher.getAsResult(url, appId, searchId, params, headers);
         if (accept != null) {
             accept.accept(result);
@@ -133,6 +133,7 @@ public class SearchRequest {
             }
 
         } else if (result instanceof PageResult) {
+            // FIXME 此处有问题，超过index.max_result_window会报错，待修复，请勿使用（必须用SCROLL或search-after）
             PageResult<T> pageResult = (PageResult<T>) result;
             if (pageResult.size() < 1) {
                 callback.noResult();

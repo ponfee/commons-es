@@ -1,4 +1,4 @@
-package uss.res;
+package uss2.res;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,18 +14,18 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.MapUtils;
 
-import com.sf.ddt.es.uss.res.BaseResult;
-import com.sf.ddt.sysUtils.ObjectUtils;
-import com.sf.ddt.tree.BaseNode;
-import com.sf.ddt.tree.FlatNode;
-import com.sf.ddt.tree.TreeNode;
+import uss2.es.uss.res.BaseResult;
+import uss2.sysUtils.ObjectUtils;
+import uss2.tree.BaseNode;
+import uss2.tree.FlatNode;
+import uss2.tree.TreeNode;
 
 import uss.res.AggsTreeResult2.AggsTreeItem;
 
 /**
  * USS aggs flat result
  * 
- * @author 01367825
+ * @author Ponfee
  */
 public class AggsFlatResult2 extends BaseResult {
 

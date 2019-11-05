@@ -15,6 +15,16 @@ public class ObjectResult extends BaseResult {
 
     public ObjectResult() {}
 
+    public ObjectResult(boolean status, String errorCode, String errorMessage, Object data) {
+        this.setSuccess(status);
+        if (!status) {
+            this.setErrorCode(errorCode);
+            this.setErrorMessage(errorMessage);
+        }
+        this.setObj(data);
+        this.setDate(new Date());
+    }
+
     public ObjectResult(BaseResult other) {
         super(other);
     }
@@ -24,11 +34,22 @@ public class ObjectResult extends BaseResult {
         this.obj = obj;
     }
 
+    public ObjectResult(BaseResult other, Object obj, String name) {
+        super(other);
+        this.obj = obj;
+        super.setName(name);
+    }
+
     public static ObjectResult success(Object obj) {
+        return success(obj, null);
+    }
+
+    public static ObjectResult success(Object obj, String name) {
         ObjectResult result = new ObjectResult();
         result.setSuccess(true);
         result.setDate(new Date());
         result.obj = obj;
+        result.setName(name);
         return result;
     }
 

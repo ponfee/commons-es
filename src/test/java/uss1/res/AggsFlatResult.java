@@ -81,7 +81,7 @@ public class AggsFlatResult extends BaseResult {
             throw new RuntimeException("Unknown columns: " + diff + ".");
         }
         List<int[]> swaps = new ArrayList<>();
-        for (int i = 0, j, n = fields.length; i < n; i++) { // 以dimensions为基准
+        for (int i = 0, j, n = fields.length; i < n; i++) { // 以fields为基准
             for (j = i; j < n; j++) {
                 if (fields[i].equals(columns[j])) {
                     break;

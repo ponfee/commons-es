@@ -148,23 +148,24 @@ public enum SearchPlatform {
         return get(url, Map.class, appId, searchId, params, headers);
     }
 
-    public BaseResult getAsResult(String url, String appId, String searchId,
-                                  String params, Map<String, String> headers) {
+    @SuppressWarnings("unchecked")
+    public <E extends BaseResult> E getAsResult(String url, String appId, String searchId,
+                                                String params, Map<String, String> headers) {
         String resp = getAsString(url, appId, searchId, params, headers);
         if (StringUtils.isEmpty(resp)) {
-            return BaseResult.failure("Empty response.");
+            return (E) BaseResult.failure("Empty response.");
         }
         try {
             NormalResult result = JSON.parseObject(resp, NormalResult.class);
             if (!result.isSuccess() || MapUtils.isEmpty(result.getObj())) {
-                return new BaseResult(result);
+                return (E) new BaseResult(result);
             }
             result.setTookTime(Numbers.toInt(result.getObj().get("tookTime")));
             result.setHitNum(Numbers.toInt(result.getObj().get("hitNum")));
-            return convertResult(result, params, headers);
+            return (E) convertResult(result, params, headers);
         } catch (Exception e) {
             logger.warn("BDP-USS search request failure: {}", resp, e);
-            return BaseResult.failure(resp);
+            return (E) BaseResult.failure(resp);
         }
     }
 
@@ -195,7 +196,7 @@ public enum SearchPlatform {
         NormalResult result, PageParams params) {
         int pageSize = params.getPageSize(), pageNum = params.getPageNum(), from = params.getFrom();
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
-        Page<Map<String, Object>> page = Page.of(list);
+        Page<Map<String, Object>> page = new Page<>(list);
         page.setTotal(result.getHitNum());
         page.setPages(PageParams.computeTotalPages(page.getTotal(), pageSize)); // 总页数
         page.setPageNum(pageNum);
@@ -289,7 +290,7 @@ public enum SearchPlatform {
 
     /**
      * @param url       the search-platform es http url address, 
-     *                  like as http://public-int-gw.intsit.sfdc.com.cn:1080/uss-search/searchService
+     *                  like as http://domain:port/search/service
      * @param appId     the search-platform es http url api appid
      * @param searchId  the search-platform es http url api searchId
      * @param params    the search-platform es request params

@@ -1,4 +1,4 @@
-package uss;
+package uss2;
 
 import java.text.MessageFormat;
 import java.util.List;
@@ -13,22 +13,22 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.sf.ddt.es.uss.req.PageParams;
-import com.sf.ddt.es.uss.res.AggsFlatResult;
-import com.sf.ddt.es.uss.res.AggsTreeResult;
-import com.sf.ddt.es.uss.res.AggsTreeResult.AggsTreeItem;
-import com.sf.ddt.es.uss.res.BaseResult;
-import com.sf.ddt.es.uss.res.NormalResult;
-import com.sf.ddt.es.uss.res.PageMapResult;
-import com.sf.ddt.es.uss.res.ScrollMapResult;
-import com.sf.ddt.http.Http;
-import com.sf.ddt.model.Pager;
-import com.sf.ddt.sysUtils.Numbers;
+import uss2.es.uss.req.PageParams;
+import uss2.es.uss.res.AggsFlatResult;
+import uss2.es.uss.res.AggsTreeResult;
+import uss2.es.uss.res.AggsTreeResult.AggsTreeItem;
+import uss2.es.uss.res.BaseResult;
+import uss2.es.uss.res.NormalResult;
+import uss2.es.uss.res.PageMapResult;
+import uss2.es.uss.res.ScrollMapResult;
+import uss2.http.Http;
+import uss2.model.Pager;
+import uss2.sysUtils.Numbers;
 
 /**
  * USS Searcher
  * 
- * @author 01367825
+ * @author Ponfee
  */
 public enum SearchPlatform2 {
 
@@ -241,7 +241,7 @@ public enum SearchPlatform2 {
 
     /**
      * @param url       the search-platform es http url address, 
-     *                  like as http://public-int-gw.intsit.sfdc.com.cn:1080/uss-search/searchService
+     *                  like as http://domain:port/search/service
      * @param appId     the search-platform es http url api appid
      * @param searchId  the search-platform es http url api searchId
      * @param params    the search-platform es request params

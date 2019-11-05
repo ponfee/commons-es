@@ -5,6 +5,9 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Optional;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+
 import code.ponfee.commons.ws.adapter.MarshalJsonResult;
 
 /**
@@ -29,6 +32,7 @@ public class BaseResult implements Serializable, MarshalJsonResult {
     // ---------------------------------data field
     private Integer tookTime;
     private Integer hitNum;
+    private String name;
 
     public BaseResult() {}
 
@@ -50,10 +54,15 @@ public class BaseResult implements Serializable, MarshalJsonResult {
         }
     }
 
-    public static BaseResult failure(String response) {
+    public static BaseResult failure(String errorMsg) {
+        return failure(null, errorMsg);
+    }
+
+    public static BaseResult failure(String errorCode, String errorMsg) {
         BaseResult result = new BaseResult();
         result.setSuccess(false);
-        result.setErrorMessage(response);
+        result.setErrorCode(errorCode);
+        result.setErrorMessage(errorMsg);
         result.setDate(new Date());
         return result;
     }
@@ -145,10 +154,22 @@ public class BaseResult implements Serializable, MarshalJsonResult {
         this.hitNum = hitNum;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     // -------------------------------------------------------others
     @Transient
     public boolean isSuccess() {
         return Optional.ofNullable(success).orElse(false);
     }
 
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this, SerializerFeature.DisableCircularReferenceDetect);
+    }
 }
