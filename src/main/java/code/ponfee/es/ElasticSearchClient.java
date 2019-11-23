@@ -94,7 +94,7 @@ public class ElasticSearchClient implements DisposableBean {
     private static Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class);
 
     private final TransportClient client; // ES集群客户端
-    private final BeanMaps convertor; // ES集群客户端
+    private final BeanMaps convertor;
 
     public ElasticSearchClient(String clusterName, String clusterNodes) {
         this(clusterName, clusterNodes, BeanMaps.CGLIB);
