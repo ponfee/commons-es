@@ -47,7 +47,11 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
                 SearchRequestBuilder search = getBean().prepareSearch("index", "type");
                 search.setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2)));
                 search.setFetchSource(new String[] { field1,field2 }, null);
-                result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1), new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2));
+                result = getBean().searchAfter(
+                    search, size, 
+                    new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1), 
+                    new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2)
+                );
                 if (!result.isEmpty()) {
                     value1 = result.get(result.size() - 1).get(field1);
                     value2 = result.get(result.size() - 1).get(field2);
@@ -71,8 +75,8 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
         getBean().searchEnd(
             () ->  getBean().prepareSearch("index", "type").setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2))).setFetchSource(new String[] { field1, field2 }, null), size, 
             list -> la.add(list.size()), 
-            new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1),
-            new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2)
+            new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1),
+            new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2)
         );
         System.out.println(la.longValue());
     }
