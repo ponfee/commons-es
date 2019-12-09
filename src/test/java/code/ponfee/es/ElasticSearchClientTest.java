@@ -30,7 +30,7 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
 
     @Test
     public void test0() {
-        SearchRequestBuilder search = getBean().prepareSearch("index", "type");
+        SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
         consoleJson(getBean().rankingSearch(search, 10));
     }
 
@@ -40,14 +40,14 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
         int count = 0;
         try {
             Object value1 = "", value2 = 0; // 0L
-            String field1 = "f1", field2 = "f2";
+            String field1 = "waybillNo", field2 = "consignedTime";
             int size = 997;
             List<Map<String, Object>> result;
             do {
-                SearchRequestBuilder search = getBean().prepareSearch("index", "type");
+                SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
                 search.setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2)));
                 search.setFetchSource(new String[] { field1,field2 }, null);
-                result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1), new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2));
+                result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1), new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2));
                 if (!result.isEmpty()) {
                     value1 = result.get(result.size() - 1).get(field1);
                     value2 = result.get(result.size() - 1).get(field2);
@@ -65,21 +65,21 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
     @Test
     public void test2() {
         Object value1 = "", value2 = 0; // 0L
-        String field1 = "f1", field2 = "f2";
+        String field1 = "waybillNo", field2 = "consignedTime";
         int size = 997;
         LongAdder la = new LongAdder();
         getBean().searchEnd(
-            () ->  getBean().prepareSearch("index", "type").setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2))).setFetchSource(new String[] { field1, field2 }, null), size, 
+            () ->  getBean().prepareSearch("ddt_waybill", "ddt_waybill").setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2))).setFetchSource(new String[] { field1, field2 }, null), size, 
             list -> la.add(list.size()), 
-            new SearchAfter<>(new SortField(SortOrder.ASC, field1), value1),
-            new SearchAfter<>(new SortField(SortOrder.ASC, field2), value2)
+            new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1),
+            new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2)
         );
         System.out.println(la.longValue());
     }
     
     @Test
     public void test3() {
-        //SearchRequestBuilder search = getBean().prepareSearch("index", "type");
+        //SearchRequestBuilder search = getBean().prepareSearch("ddt_risk_wastaged", "wastaged_city_es");
         SearchRequestBuilder search = getBean().prepareSearch("test_index1", "test_index1");
         consoleJson(getBean().rankingSearch(search, 10));
     }
