@@ -47,7 +47,11 @@ public class ElasticSearchClientTest extends BaseTest<ElasticSearchClient> {
                 SearchRequestBuilder search = getBean().prepareSearch("ddt_waybill", "ddt_waybill");
                 search.setQuery(QueryBuilders.boolQuery().must(QueryBuilders.existsQuery(field2)));
                 search.setFetchSource(new String[] { field1,field2 }, null);
-                result = getBean().searchAfter(search, size, new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1), new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2));
+                result = getBean().searchAfter(
+                    search, size, 
+                    new SearchAfter<>(new SortField(field1, SortOrder.ASC), value1), 
+                    new SearchAfter<>(new SortField(field2, SortOrder.ASC), value2)
+                );
                 if (!result.isEmpty()) {
                     value1 = result.get(result.size() - 1).get(field1);
                     value2 = result.get(result.size() - 1).get(field2);
