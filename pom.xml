@@ -22,12 +22,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.alibaba</groupId>
-      <artifactId>fastjson</artifactId>
-      <version>1.2.58</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
       <version>${spring.version}</version>
@@ -37,11 +31,39 @@
     <dependency>
       <groupId>code.ponfee</groupId>
       <artifactId>commons-core</artifactId>
-      <version>2.0-SNAPSHOT</version>
+      <version>2.2-SNAPSHOT</version>
       <exclusions>
         <exclusion>
-          <groupId>dom4j</groupId>
-          <artifactId>dom4j</artifactId>
+          <groupId>aspose</groupId>
+          <artifactId>words-jdk16</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId> third-jce</groupId>
+          <artifactId>third-jce</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sourceforge.jchardet</groupId>
+          <artifactId>jchardet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sourceforge.cpdetector</groupId>
+          <artifactId>cpdetector</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sourceforge.jargs</groupId>
+          <artifactId>jargs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>antlr</groupId>
+          <artifactId>antlr</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-fileupload</groupId>
+          <artifactId>commons-fileupload</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.lingala.zip4j</groupId>
+          <artifactId>zip4j</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.caucho</groupId>
@@ -52,36 +74,48 @@
           <artifactId>fst</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>redis.clients</groupId>
-          <artifactId>jedis</artifactId>
+          <groupId>com.esotericsoftware</groupId>
+          <artifactId>kryo</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.springframework.data</groupId>
-          <artifactId>spring-data-redis</artifactId>
+          <groupId>redis.clients</groupId>
+          <artifactId>jedis</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.itextpdf</groupId>
           <artifactId>itextpdf</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>aspose</groupId>
-          <artifactId>words-jdk16</artifactId>
+          <groupId>org.dom4j</groupId>
+          <artifactId>dom4j</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>antlr</groupId>
-          <artifactId>antlr</artifactId>
+          <groupId>com.monitorjbl</groupId>
+          <artifactId>xlsx-streamer</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.mozilla.intl</groupId>
-          <artifactId>chardet</artifactId>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-csv</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>cpdetector</groupId>
-          <artifactId>cpdetector</artifactId>
+          <groupId>io.protostuff</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>third-jce</groupId>
-          <artifactId>third-jce</artifactId>
+          <groupId>org.mybatis</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.alibaba</groupId>
+          <artifactId>druid</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.data</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.poi</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
