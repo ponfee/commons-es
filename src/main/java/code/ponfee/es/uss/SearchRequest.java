@@ -81,7 +81,7 @@ public class SearchRequest {
         );
     }
 
-    public <T> void scrollSearch(ScrollSearchCallback<T> callback) {
+    public <T> void scrollSearch(ScrollSearchAccepter<T> callback) {
         scrollSearch(null, callback); // accept null: prevent non scroll search
     }
 
@@ -100,7 +100,7 @@ public class SearchRequest {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void scrollSearch(Consumer<BaseResult> accept, ScrollSearchCallback<T> callback) {
+    private <T> void scrollSearch(Consumer<BaseResult> accept, ScrollSearchAccepter<T> callback) {
         BaseResult result = searcher.getAsResult(url, appId, searchId, params, headers);
         if (accept != null) {
             accept.accept(result);
@@ -131,8 +131,9 @@ public class SearchRequest {
             }
 
         } else {
-            // 超过index.max_result_window会报错，请勿使用（必须用SCROLL或search-after）
+            // 超过index.max_result_window会报错，请勿使用（务必使用SCROLL或search-after）
             throw new UnsupportedOperationException("Cannot support search all: " + searcher.name());
+
             /*PageResult<T> pageResult = (PageResult<T>) result;
             if (pageResult.size() < 1) {
                 callback.noResult();
