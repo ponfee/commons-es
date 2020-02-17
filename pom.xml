@@ -6,13 +6,44 @@
   <groupId>code.ponfee</groupId>
   <artifactId>commons-es</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>${publish.version}</version>
   <name>commons-es</name>
 
   <properties>
     <spring.version>4.3.25.RELEASE</spring.version>
     <elasticsearch.version>5.6.16</elasticsearch.version>
   </properties>
+
+  <!-- clean deploy -Dmaven.test.skip=true -P env -->
+  <profiles>
+    <profile>
+      <id>deve</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <distributionManagement>
+        <repository>
+          <id>repos-snapshots</id>
+          <url>https://maven.aliyun.com/repository/snapshots</url>
+        </repository>
+      </distributionManagement>
+      <properties>
+        <publish.version>1.0-SNAPSHOT</publish.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>prod</id>
+      <distributionManagement>
+        <repository>
+          <id>repos-releases</id>
+          <url>https://maven.aliyun.com/repository/releases</url>
+        </repository>
+      </distributionManagement>
+      <properties>
+        <publish.version>1.0</publish.version>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -98,6 +129,10 @@
           <artifactId>commons-csv</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.alibaba</groupId>
+          <artifactId>druid</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>io.protostuff</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -106,16 +141,20 @@
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.alibaba</groupId>
-          <artifactId>druid</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.springframework.data</groupId>
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.poi</groupId>
           <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
