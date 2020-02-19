@@ -14,6 +14,10 @@ public class Searcher {
         this.appId = appId;
     }
 
+    public BaseResult search(SearchPlatform type, String searchId, String params) {
+        return search(type, searchId, params, null);
+    }
+
     public BaseResult search(SearchPlatform type, String searchId, 
                              String params, Map<String, String> headers) {
         return SearchRequestBuilder

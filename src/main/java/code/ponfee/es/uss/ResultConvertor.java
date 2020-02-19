@@ -19,7 +19,7 @@ import code.ponfee.es.uss.res.PageResult;
  */
 public enum ResultConvertor {
 
-    RESULT_LIST("X-RESULT-LIST") {
+    RESULT_LIST(SearchConstants.HEAD_RESULT_LIST) {
         @Override
         public BaseResult convert(BaseResult result) {
             return result instanceof PageResult
@@ -28,7 +28,7 @@ public enum ResultConvertor {
         }
     }, //
 
-    RESULT_ONE("X-RESULT-ONE") {
+    RESULT_ONE(SearchConstants.HEAD_RESULT_ONE) {
         @Override
         public BaseResult convert(BaseResult result) {
             result = RESULT_LIST.convert(result);
