@@ -4,6 +4,11 @@ import java.util.Map;
 
 import code.ponfee.es.uss.res.BaseResult;
 
+/**
+ * Searcher
+ * 
+ * @author Ponfee
+ */
 public class Searcher {
 
     private final String url;
@@ -14,12 +19,12 @@ public class Searcher {
         this.appId = appId;
     }
 
-    public BaseResult search(SearchPlatform type, String searchId, String params) {
+    public <T extends BaseResult> T search(SearchPlatform type, String searchId, String params) {
         return search(type, searchId, params, null);
     }
 
-    public BaseResult search(SearchPlatform type, String searchId, 
-                             String params, Map<String, String> headers) {
+    public <T extends BaseResult> T  search(SearchPlatform type, String searchId, 
+                                            String params, Map<String, String> headers) {
         return SearchRequestBuilder
             .newBuilder(type, this.url, this.appId, searchId)
             .params(params)

@@ -18,7 +18,7 @@ import org.nlpcn.es4sql.query.ESActionFactory;
 import org.nlpcn.es4sql.query.SqlElasticRequestBuilder;
 
 /**
- * Noop Elastic Search Client
+ * Noop Elastic Search Client for Sql parse
  * 
  * @author Ponfee
  */
@@ -27,8 +27,7 @@ public final class SqlParserClient extends AbstractClient {
     private static final SqlParserClient SINGLETON = new SqlParserClient();
 
     private SqlParserClient() {
-        //super(Settings.EMPTY, new ThreadPool(Settings.EMPTY));
-        super(Settings.EMPTY, null);
+        super(Settings.EMPTY, null/* new ThreadPool(Settings.EMPTY) */);
     }
 
     public static SqlParserClient get() {

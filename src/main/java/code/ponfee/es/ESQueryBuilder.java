@@ -27,13 +27,13 @@ import org.elasticsearch.search.sort.SortOrder;
  * 
  * 明细数据查询与聚合汇总查询：size不指定则默认为10
  * 
- * QUERY_THEN_FETCH（默认）： 主节点将请求分发给所有分片，各个分片打分排序后将数据的id和分值返回给主节点，
- *                        .主节点收到后进行汇总排序再根据排序后的id到对应的节点读取对应的数据再返回给客户端，此种方式需要和es交互两次。
+ * QUERY_THEN_FETCH（默认）：
+ *   主节点将请求分发给所有分片，各个分片打分排序后将数据的id和分值返回给主节点；
+ *   主节点收到后进行汇总排序再根据排序后的id到对应的节点读取对应的数据再返回给客户端，此种方式需要和es交互两次；
+ * 
  * DFS_QUERY_THEN_FETCH：将各个分片的规则统一起来进行打分
  * 
- * <p>
- * 过滤空串
- * must(QueryBuilders.existsQuery("field")) && mustNot(QueryBuilders.wildcardQuery("field", "*"))
+ * 过滤空串：must(QueryBuilders.existsQuery("field")) && mustNot(QueryBuilders.wildcardQuery("field", "*"))
  * 
  * @author Ponfee
  */
@@ -51,6 +51,15 @@ public class ESQueryBuilder {
     private ESQueryBuilder(String[] indices, String[] types) {
         this.indices = indices;
         this.types = types;
+    }
+
+    /**
+     * Use in generate DSL
+     * 
+     * @return
+     */
+    public static ESQueryBuilder newBuilder() {
+        return newBuilder("", "");
     }
 
     public static ESQueryBuilder newBuilder(String index, String... type) {
