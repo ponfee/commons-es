@@ -50,7 +50,7 @@ public enum ResultConvertor {
         }
     }, //
 
-    RESULT_NORMAL(null);
+    RESULT_NOOP(null);
 
     private final String header;
 
@@ -74,7 +74,7 @@ public enum ResultConvertor {
                 }
             }
         }
-        return RESULT_NORMAL;
+        return RESULT_NOOP;
     }
 
 }

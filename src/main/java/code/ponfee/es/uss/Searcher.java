@@ -2,6 +2,7 @@ package code.ponfee.es.uss;
 
 import java.util.Map;
 
+import code.ponfee.commons.json.Jsons;
 import code.ponfee.es.uss.res.BaseResult;
 
 /**
@@ -25,12 +26,17 @@ public class Searcher {
 
     public <T extends BaseResult> T  search(SearchPlatform type, String searchId, 
                                             String params, Map<String, String> headers) {
-        return SearchRequestBuilder
+        T result = SearchRequestBuilder
             .newBuilder(type, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()
             .getAsResult();
+
+        if (result.isFailure()) {
+            throw new RuntimeException("USS request failure: " + Jsons.toJson(result));
+        }
+        return result;
     }
 
 }

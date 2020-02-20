@@ -113,9 +113,10 @@ public class SearchRequest {
                 return;
             }
 
-            int totalRecords = scrollResult.getHitNum(),
-                // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
-                scrollSize = Optional.ofNullable(getHeader(SearchConstants.HEAD_SCROLL_SIZE))
+            long totalRecords = scrollResult.getHitNum();
+
+            // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
+            int scrollSize = Optional.ofNullable(getHeader(SearchConstants.HEAD_SCROLL_SIZE))
                                      .map(Numbers::toInt).orElse(scrollResult.getList().size()),
                 totalPages = PageParams.computeTotalPages(totalRecords, scrollSize), 
                 pageNo = 1;
@@ -123,7 +124,9 @@ public class SearchRequest {
 
             while (scrollResult.size() >= scrollSize) {
                 scrollResult = (ScrollResult<T>) searcher.getAsResult(
-                    url, appId, searchId, new ScrollParams(params, scrollResult.getScrollId()).buildParams(), headers
+                    url, appId, searchId, 
+                    new ScrollParams(params, scrollResult.getScrollId()).buildParams(), 
+                    headers
                 );
                 if (scrollResult.size() > 0) {
                     callback.nextPage(scrollResult.getList(), totalRecords, totalPages, pageNo++);
@@ -132,7 +135,7 @@ public class SearchRequest {
 
         } else {
             // 超过index.max_result_window会报错，请勿使用（务必使用SCROLL或search-after）
-            throw new UnsupportedOperationException("Cannot support search all: " + searcher.name());
+            throw new UnsupportedOperationException("Cannot support full search: " + searcher.name());
 
             /*PageResult<T> pageResult = (PageResult<T>) result;
             if (pageResult.size() < 1) {
