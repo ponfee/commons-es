@@ -28,7 +28,6 @@ public class ScrollResult<T> extends BaseResult {
 
     private final Class<T> type;
 
-    private int returnNum;
     private String scrollId;
     private List<T> list;
 
@@ -40,10 +39,10 @@ public class ScrollResult<T> extends BaseResult {
         this(base, 0, 0, null);
     }
 
-    public ScrollResult(BaseResult base, int hitNum, int returnNum, String scrollId) {
+    public ScrollResult(BaseResult base, int hitNum, long returnNum, String scrollId) {
         super(base);
         this.type = GenericUtils.getActualTypeArgument(this.getClass());
-        this.returnNum = returnNum;
+        super.setReturnNum(returnNum);
         this.scrollId = scrollId;
     }
 
@@ -123,14 +122,6 @@ public class ScrollResult<T> extends BaseResult {
     }
 
     // ----------------------------------------------------------getter/setter
-    public int getReturnNum() {
-        return returnNum;
-    }
-
-    public void setReturnNum(int returnNum) {
-        this.returnNum = returnNum;
-    }
-
     public String getScrollId() {
         return scrollId;
     }

@@ -29,8 +29,9 @@ public class BaseResult implements Serializable, MarshalJsonResult {
     private String version;
 
     // ---------------------------------data field
-    private Integer tookTime;
     private Long hitNum;
+    private Long returnNum;
+    private Integer tookTime;
 
     public BaseResult() {}
 
@@ -136,20 +137,28 @@ public class BaseResult implements Serializable, MarshalJsonResult {
         this.version = version;
     }
 
-    public Integer getTookTime() {
-        return tookTime;
-    }
-
-    public void setTookTime(Integer tookTime) {
-        this.tookTime = tookTime;
-    }
-
     public Long getHitNum() {
         return hitNum;
     }
 
     public void setHitNum(Long hitNum) {
         this.hitNum = hitNum;
+    }
+
+    public Long getReturnNum() {
+        return returnNum;
+    }
+
+    public void setReturnNum(Long returnNum) {
+        this.returnNum = returnNum;
+    }
+
+    public Integer getTookTime() {
+        return tookTime;
+    }
+
+    public void setTookTime(Integer tookTime) {
+        this.tookTime = tookTime;
     }
 
     // -------------------------------------------------------others

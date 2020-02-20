@@ -75,7 +75,6 @@ public enum SearchPlatform {
         protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
             ScrollMapResult scrollResult = new ScrollMapResult(result);
             Map<String, Object> data = result.getObj();
-            scrollResult.setReturnNum(Numbers.toInt(data.get("returnNum")));
             scrollResult.setScrollId(Objects.toString(data.get("scrollId"), ""));
             scrollResult.setList((List<Map<String, Object>>) data.get(HITS_ROOT));
             return scrollResult;
@@ -161,8 +160,9 @@ public enum SearchPlatform {
                 return (E) new BaseResult(result);
             }
 
-            result.setTookTime(Numbers.toInt(result.getObj().get("tookTime")));
-            result.setHitNum(Numbers.toLong(result.getObj().get("hitNum")));
+            result.setHitNum(Numbers.toWrapLong(result.getObj().get("hitNum")));
+            result.setReturnNum(Numbers.toWrapLong(result.getObj().get("returnNum")));
+            result.setTookTime(Numbers.toWrapInt(result.getObj().get("tookTime")));
             return (E) convertResult(result, params, headers);
         } catch (Exception e) {
             logger.warn("BDP-USS search request failure: {}", resp, e);
