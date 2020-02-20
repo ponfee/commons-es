@@ -17,15 +17,11 @@ public class ScrollMapResult extends ScrollResult<Map<String, Object>> {
     private static final long serialVersionUID = 4464963886372526414L;
 
     public ScrollMapResult() {
-        this(null, 0, 0, null);
+        this(null, null);
     }
 
-    public ScrollMapResult(BaseResult base) {
-        this(base, 0, 0, null);
-    }
-
-    public ScrollMapResult(BaseResult base, int hitNum, int returnNum, String scrollId) {
-        super(base, hitNum, returnNum, scrollId);
+    public ScrollMapResult(BaseResult base, String scrollId) {
+        super(base, scrollId);
     }
 
     // ------------------------------------------------------------

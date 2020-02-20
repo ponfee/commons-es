@@ -45,8 +45,9 @@ public class BaseResult implements Serializable, MarshalJsonResult {
             this.params = base.params;
             this.date = base.date;
             this.version = base.version;
-            this.tookTime = base.tookTime;
             this.hitNum = base.hitNum;
+            this.returnNum = base.returnNum;
+            this.tookTime = base.tookTime;
         } else {
             this.success = false;
             this.date = new Date();

@@ -73,7 +73,7 @@ public enum SearchPlatform {
     SCROLL(ImmutableMap.of("version", "scroll")) {
         @Override @SuppressWarnings("unchecked")
         protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
-            ScrollMapResult scrollResult = new ScrollMapResult(result);
+            ScrollMapResult scrollResult = new ScrollMapResult(result, null);
             Map<String, Object> data = result.getObj();
             scrollResult.setScrollId(Objects.toString(data.get("scrollId"), ""));
             scrollResult.setList((List<Map<String, Object>>) data.get(HITS_ROOT));

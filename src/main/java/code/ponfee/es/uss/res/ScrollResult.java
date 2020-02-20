@@ -32,17 +32,12 @@ public class ScrollResult<T> extends BaseResult {
     private List<T> list;
 
     public ScrollResult() {
-        this(null, 0, 0, null);
+        this(null, null);
     }
 
-    public ScrollResult(BaseResult base) {
-        this(base, 0, 0, null);
-    }
-
-    public ScrollResult(BaseResult base, int hitNum, long returnNum, String scrollId) {
+    public ScrollResult(BaseResult base, String scrollId) {
         super(base);
         this.type = GenericUtils.getActualTypeArgument(this.getClass());
-        super.setReturnNum(returnNum);
         this.scrollId = scrollId;
     }
 
@@ -51,7 +46,8 @@ public class ScrollResult<T> extends BaseResult {
      * 
      * @return
      */
-    public @Transient boolean isEmpty() {
+    @Transient
+    public boolean isEmpty() {
         return CollectionUtils.isNotEmpty(list);
     }
 
@@ -75,7 +71,7 @@ public class ScrollResult<T> extends BaseResult {
      */
     public <E> ScrollResult<E> transform(Function<T, E> transformer) {
         Preconditions.checkArgument(transformer != null);
-        ScrollResult<E> result = new ScrollResult<>(this);
+        ScrollResult<E> result = new ScrollResult<>(this, this.getScrollId());
         if (CollectionUtils.isNotEmpty(list)) {
             result.setList(
                 list.stream().map(transformer).collect(Collectors.toList())
