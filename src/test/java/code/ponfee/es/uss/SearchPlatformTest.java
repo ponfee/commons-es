@@ -180,7 +180,7 @@ public class SearchPlatformTest {
                 .mustIn("exceptionType", "1", "2");
         //System.out.println(builder.toString(0,10));
 
-        BaseResult result = client().search(SearchPlatform.DSL, "826", builder.toString(0,10), null);
+        BaseResult result = client().search(SearchPlatform.DSL, "826", builder.toString(0,2), null);
         PageMapResult aggsResult = (PageMapResult) result;
         console(aggsResult);
         Assert.assertTrue(result.getSuccess());

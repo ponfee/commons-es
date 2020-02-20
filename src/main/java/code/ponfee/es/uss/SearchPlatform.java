@@ -2,7 +2,6 @@ package code.ponfee.es.uss;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,19 +243,8 @@ public enum SearchPlatform {
         if (headers == null) {
             return null;
         }
-
-        Object value = headers.get(SearchConstants.HEAD_AGGS_COLUMNS);
-        if (value == null) {
-            return null;
-        }
-
-        if (value instanceof String[]) {
-            return (String[]) value;
-        } else if (value instanceof Collection) {
-            return ((Collection<?>) value).stream().map(x -> x.toString()).toArray(String[]::new);
-        } else {
-            return value.toString().split(",");
-        }
+        String value = headers.get(SearchConstants.HEAD_AGGS_COLUMNS);
+        return value == null ? null : value.toString().split(",");
     }
 
     @SuppressWarnings("unchecked")

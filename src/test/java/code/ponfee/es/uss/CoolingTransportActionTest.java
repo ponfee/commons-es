@@ -3,7 +3,6 @@ package code.ponfee.es.uss;
 import static code.ponfee.es.uss.SearcherConstants.client;
 import static code.ponfee.es.uss.SearcherConstants.console;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -16,11 +15,13 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 
+import code.ponfee.commons.json.Jsons;
 import code.ponfee.commons.math.Numbers;
 import code.ponfee.commons.util.Dates;
 import code.ponfee.es.ESQueryBuilder;
 import code.ponfee.es.uss.res.BaseResult;
 import code.ponfee.es.uss.res.ListResult;
+import code.ponfee.es.uss.res.PageResult;
 
 /**
  * @author Ponfee
@@ -60,9 +61,6 @@ public class CoolingTransportActionTest  {
     }
 
 
-    private static final List<String> AREA_LIST = Arrays.asList(
-        "华北仓配中心", "华东仓配中心", "华南仓配中心", "华西仓配中心", "中南仓配中心"
-    );
     @Test
     public void tmsstatus11() {
         List<String> exceptionTypes = Arrays.asList("1", "2");
@@ -70,9 +68,8 @@ public class CoolingTransportActionTest  {
         Date now = new Date();
         ESQueryBuilder builder = ESQueryBuilder.newBuilder("");
         builder.excludeFields("assetCode", "inputTime")
-               .mustRange("recordTime", Dates.startOfDay(now).getTime(), Dates.endOfDay(now).getTime())
-               .mustIn("areaName", AREA_LIST)
-               .desc("recordTime");
+               .mustRange("statStartTime", Dates.endOfDay(Dates.plusYears(now, -2)).getTime(), Dates.endOfDay(now).getTime())
+               .desc("statStartTime");
         if (CollectionUtils.isNotEmpty(exceptionTypes)) {
             builder.mustIn("exceptionType", exceptionTypes);
         }
@@ -82,13 +79,12 @@ public class CoolingTransportActionTest  {
             SearchPlatform.DSL, "1026", builder.toString(0, 5000), null
         );
 
-        if (result instanceof ListResult) {
-            ListResult<Map<String, Object>> res = (ListResult<Map<String, Object>>) result;
-            if (res.getList() == null) {
-                res.setList(new ArrayList<>(1));
-            }
-            res.process(m -> m.put("recordTime", Dates.format(new Date(Numbers.toLong(m.get("recordTime"))))));
+        if (result instanceof PageResult) {
+            PageResult<Map<String, Object>> res = (PageResult<Map<String, Object>>) result;
+            System.out.println("============result size: "+res.getPage().getRows().size());
+            res.process(m -> m.put("statStartTime", Dates.format(new Date(Numbers.toLong(m.get("statStartTime"))))));
         } else {
+            System.out.println(Jsons.toJson(result));
         }
        //Assert.assertTrue(result.getSuccess());
     }
@@ -116,7 +112,7 @@ public class CoolingTransportActionTest  {
         ESQueryBuilder builder = ESQueryBuilder.newBuilder("ddt_ctes_warehouse_status", "ddt_ctes_warehouse_status");
 
         builder
-               .mustRange("recordTime", Dates.startOfDay(new Date()).getTime(), Dates.endOfDay(new Date()).getTime())
+               .mustRange("statStartTime", Dates.startOfDay(new Date()).getTime(), Dates.endOfDay(new Date()).getTime())
                .mustIn("areaName", "华北仓配中心", "华东仓配中心", "华南仓配中心", "华西仓配中心", "中南仓配中心")
                .includeFields("cityName")
                ;

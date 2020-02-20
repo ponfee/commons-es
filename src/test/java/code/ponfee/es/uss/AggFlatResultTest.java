@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Test;
+
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 
@@ -12,7 +14,8 @@ import code.ponfee.es.uss.res.AggsFlatResult.AggsFlatItem;
 
 public class AggFlatResultTest {
 
-    public static void main(String[] args) {
+    @Test
+    public void test() {
         String[] dimensions = { "a", "b", "c", "d" };
         AggsFlatResult result = new AggsFlatResult();
 

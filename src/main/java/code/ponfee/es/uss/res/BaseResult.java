@@ -30,7 +30,7 @@ public class BaseResult implements Serializable, MarshalJsonResult {
 
     // ---------------------------------data field
     private Long hitNum;
-    private Long returnNum;
+    private Long returnNum; // hits[]
     private Integer tookTime;
 
     public BaseResult() {}
