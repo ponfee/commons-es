@@ -77,8 +77,10 @@ import code.ponfee.es.mapping.IElasticSearchMapping;
 /**
  * ElasticSearch Client
  * 
- * TransportClient：轻量级的Client，使用Netty线程池，Socket连接到ES集群。本身不加入到集群，只作为请求的处理。
- * Node Client：客户端节点本身也是ES节点，加入到集群，和其他ElasticSearch节点一样。频繁的开启和关闭这类Node Clients会在集群中产生“噪音”。
+ * {@link org.elasticsearch.client.transport.TransportClient}：
+ *   轻量级的Client，使用Netty线程池，Socket连接到ES集群。本身不加入到集群，只作为请求的处理
+ * {@link org.elasticsearch.client.node.NodeClient}          ：
+ *   客户端节点本身也是ES节点，加入到集群，和其他ElasticSearch节点一样，频繁的开启和关闭这类Node Clients会在集群中产生“噪音”
  * 
  * @author Ponfee
  */
@@ -97,7 +99,7 @@ public class ElasticSearchClient implements DisposableBean {
     private final BeanMaps convertor;
 
     public ElasticSearchClient(String clusterName, String clusterNodes) {
-        this(clusterName, clusterNodes, BeanMaps.CGLIB);
+        this(clusterName, clusterNodes, BeanMaps.PROPS);
     }
 
     /**
@@ -1175,11 +1177,8 @@ public class ElasticSearchClient implements DisposableBean {
         } 
 
         data.put(DOCUMENT_ID, id);
-        if (clazz.isAssignableFrom(data.getClass())) {
-            return (T) data;
-        } else {
-            return this.convertor.toBean(data, clazz);
-        }
+
+        return clazz.isAssignableFrom(data.getClass()) ? (T) data : convertor.toBean(data, clazz);
     }
 
 }
