@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -58,8 +59,8 @@ public class AggsFlatResult extends BaseResult {
     }
 
     public void sort(Comparator<Object[]> comparator) {
-        if (aggs != null && CollectionUtils.isNotEmpty(aggs.getDataset())) {
-            aggs.getDataset().sort(comparator);
+        if (aggs != null && CollectionUtils.isNotEmpty(aggs.dataset)) {
+            aggs.dataset.sort(comparator);
         }
     }
 
@@ -69,21 +70,21 @@ public class AggsFlatResult extends BaseResult {
      * @param fields the fields
      */
     public void adjustOrders(String... fields) {
+        if (aggs == null || ArrayUtils.isEmpty(aggs.columns)) {
+            return;
+        }
+        String[] columns = aggs.columns;
+        if (Objects.deepEquals(columns, fields)) {
+            return;
+        }
         if (Sets.newHashSet(fields).size() != fields.length) {
             throw new RuntimeException("Repeat columns: " + Arrays.toString(fields));
         }
-        if (   this.getAggs() == null 
-            || ArrayUtils.isEmpty(this.getAggs().getColumns()) 
-            || CollectionUtils.isEmpty(this.getAggs().getDataset())
-        ) {
-            return;
-        }
-        String[]       columns = this.getAggs().getColumns(); // 数据列
-        List<Object[]> dataset = this.getAggs().getDataset(); // 数据集
         List<String> diff = Collects.different(Arrays.asList(columns), Arrays.asList(fields));
         if (!diff.isEmpty()) {
             throw new RuntimeException("Unknown columns: " + diff + ".");
         }
+
         List<int[]> swaps = new ArrayList<>();
         for (int i = 0, j, n = fields.length; i < n; i++) { // 以fields为基准
             for (j = i; j < n; j++) {
@@ -96,8 +97,11 @@ public class AggsFlatResult extends BaseResult {
                 swaps.add(new int[] { i, j });
             }
         }
-        if (CollectionUtils.isNotEmpty(dataset) && CollectionUtils.isNotEmpty(swaps)) {
-            for (Object[] array : dataset) {
+
+        if (   CollectionUtils.isNotEmpty(aggs.dataset) 
+            && CollectionUtils.isNotEmpty(swaps)
+        ) {
+            for (Object[] array : aggs.dataset) {
                 for (int[] swap : swaps) {
                     Collects.swap(array, swap[0], swap[1]);
                 }
@@ -105,6 +109,7 @@ public class AggsFlatResult extends BaseResult {
         }
     }
 
+    // ---------------------------------------------------private methods
     private List<String> extractColumns(AggsTreeItem root) {
         List<String> columns = new ArrayList<>();
         LinkedHashMap<String, AggsTreeItem[]> subs = root.getSub();

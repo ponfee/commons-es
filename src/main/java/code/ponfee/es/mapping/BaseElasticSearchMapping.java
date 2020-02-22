@@ -39,7 +39,8 @@ public abstract class BaseElasticSearchMapping implements IElasticSearchMapping 
         this.version = version;
     }
 
-    public @Override XContentBuilder getMapping() {
+    @Override
+    public XContentBuilder getMapping() {
         try {
             return internalGetMapping();
         } catch(Exception e) {

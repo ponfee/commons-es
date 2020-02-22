@@ -45,9 +45,10 @@ public class AggsSingleResult extends BaseResult {
      */
     public void adjustOrders(String... fields) {
         AggsFlatResult flat = new AggsFlatResult(new AggsFlatItem(
-            this.aggs.getColumns(), Collections.singletonList(this.aggs.dataset)
+            this.aggs.columns, Collections.singletonList(this.aggs.dataset)
         ));
         flat.adjustOrders(fields);
+        this.aggs.columns = flat.getAggs().getColumns();
         this.aggs.dataset = flat.getAggs().getDataset().get(0);
     }
 

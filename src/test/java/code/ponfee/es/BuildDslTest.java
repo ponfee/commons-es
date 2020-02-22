@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.junit.Test;
 
 public class BuildDslTest {
@@ -66,5 +68,16 @@ public class BuildDslTest {
                .mustExists("signin_tm")
                .mustScript(script.toString());
         System.out.println(builder.toString(0, 0));
+    }
+
+    @Test
+    public void test4() {
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        query.must(QueryBuilders.regexpQuery("consNames", ".*a.*"));
+        SearchRequestBuilder search = esClient.prepareSearch("index", "type").setQuery(query).setSize(0);
+        
+        TermsAggregationBuilder aggs= AggregationBuilders.terms("expStatus_gather").field("expStatus").subAggregation(AggregationBuilders.terms("describe_gather").field("describe"));
+        search.addAggregation(aggs);
+        System.out.println(search.toString());
     }
 }

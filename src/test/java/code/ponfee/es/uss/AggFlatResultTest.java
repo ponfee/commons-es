@@ -3,6 +3,7 @@ package code.ponfee.es.uss;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.junit.Test;
 
@@ -17,6 +18,7 @@ public class AggFlatResultTest {
     @Test
     public void test() {
         String[] dimensions = { "a", "b", "c", "d" };
+        System.out.println(Objects.deepEquals(dimensions, new String[] { "a", "b", "c", "d" }));
         AggsFlatResult result = new AggsFlatResult();
 
         String[] columns = Arrays.copyOf(dimensions, dimensions.length);
