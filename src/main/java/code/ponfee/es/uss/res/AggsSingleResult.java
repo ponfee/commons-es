@@ -1,16 +1,12 @@
 package code.ponfee.es.uss.res;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
-import com.google.common.collect.Sets;
-
-import code.ponfee.commons.collect.Collects;
+import code.ponfee.es.uss.res.AggsFlatResult.AggsFlatItem;
 
 /**
  * USS aggs single result
@@ -48,38 +44,11 @@ public class AggsSingleResult extends BaseResult {
      * @param fields the fields
      */
     public void adjustOrders(String... fields) {
-        if (Sets.newHashSet(fields).size() != fields.length) {
-            throw new RuntimeException("Repeat columns: " + Arrays.toString(fields));
-        }
-        if (   this.getAggs() == null 
-            || ArrayUtils.isEmpty(this.getAggs().getColumns()) 
-            || ArrayUtils.isEmpty(this.getAggs().getDataset())
-        ) {
-            return;
-        }
-        String[] columns = this.getAggs().getColumns(); // 数据列
-        Object[] dataset = this.getAggs().getDataset(); // 数据集
-        List<String> diff = Collects.different(Arrays.asList(columns), Arrays.asList(fields));
-        if (!diff.isEmpty()) {
-            throw new RuntimeException("Unknown columns: " + diff + ".");
-        }
-        List<int[]> swaps = new ArrayList<>();
-        for (int i = 0, j, n = fields.length; i < n; i++) { // 以fields为基准
-            for (j = i; j < n; j++) {
-                if (fields[i].equals(columns[j])) {
-                    break;
-                }
-            }
-            if (i != j) {
-                Collects.swap(columns, i, j);
-                swaps.add(new int[] { i, j });
-            }
-        }
-        if (ArrayUtils.isNotEmpty(dataset) && CollectionUtils.isNotEmpty(swaps)) {
-            for (int[] swap : swaps) {
-                Collects.swap(dataset, swap[0], swap[1]);
-            }
-        }
+        AggsFlatResult flat = new AggsFlatResult(new AggsFlatItem(
+            this.aggs.getColumns(), Collections.singletonList(this.aggs.dataset)
+        ));
+        flat.adjustOrders(fields);
+        this.aggs.dataset = flat.getAggs().getDataset().get(0);
     }
 
     public static class AggsSingleItem implements Serializable {

@@ -33,6 +33,10 @@ public class AggsFlatResult extends BaseResult {
 
     public AggsFlatResult() {}
 
+    public AggsFlatResult(AggsFlatItem aggs) {
+        this.aggs = aggs;
+    }
+
     public AggsFlatResult(AggsTreeResult aggs) {
         super(aggs);
         if (aggs.getAggs() != null) {
@@ -106,6 +110,7 @@ public class AggsFlatResult extends BaseResult {
         LinkedHashMap<String, AggsTreeItem[]> subs = root.getSub();
         while (MapUtils.isNotEmpty(subs)) {
             subs.forEach((k, v) -> columns.add(k));
+            // extract columns from the fist row data
             AggsTreeItem[] sub = getFirstValue(subs);
             subs = ArrayUtils.isEmpty(sub) ? null : sub[0].getSub();
         }
@@ -123,11 +128,9 @@ public class AggsFlatResult extends BaseResult {
         List<List<Object>> dataset = Lists.newArrayList();
         if (MapUtils.isEmpty(items[0].getSub())) {
             dataset.add(
-                sub.entrySet().stream().map(
-                    e -> e.getValue()[0].getVal()
-                ).collect(
-                    Collectors.toList()
-                )
+                sub.entrySet().stream()
+                   .map(e -> e.getValue()[0].getVal())
+                   .collect(Collectors.toList())
             );
         } else {
             sub.forEach((k, v) -> {
