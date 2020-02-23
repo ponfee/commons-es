@@ -30,6 +30,7 @@ import org.nlpcn.es4sql.exception.SqlParseException;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 
+import code.ponfee.commons.json.Jsons;
 import code.ponfee.commons.math.Numbers;
 import code.ponfee.commons.model.SearchAfter;
 import code.ponfee.commons.model.SortField;
@@ -383,11 +384,12 @@ public class SearchPlatformTest {
             BaseResult rs =
                 client().search(SearchPlatform.DSL, "1136", searcher.toString(), ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x"));
             if (!(rs instanceof ListResult)) {
-                System.out.println(JSON.toJSONString(rs));
+                throw new RuntimeException("uss query fail, type: " + rs.getClass().getName() + ", resp:" + Jsons.toJson(rs));
             }
-            list = ((ListResult<Map<String, Object>>) rs).getList();
+            ListResult<Map<String, Object>> listRes = ((ListResult<Map<String, Object>>) rs);
+            list = listRes.getList();
             waybillNo = CollectionUtils.isEmpty(list) ? null : (String) list.get(list.size() - 1).get("waybillNo");
-            System.out.println("=======" + waybillNo + "," + list.size() + "," + rs.getHitNum());
+            System.out.println("=======" + waybillNo + "," + list.size() + "," + listRes.getHitNum());
         } while (list.size() == size);
     }
 

@@ -21,7 +21,7 @@ import code.ponfee.commons.reflect.GenericUtils;
  * 
  * @author Ponfee
  */
-public class PageResult<T> extends BaseResult {
+public class PageResult<T> extends DataResult {
 
     private static final long serialVersionUID = 1583479732588220379L;
 
@@ -29,11 +29,7 @@ public class PageResult<T> extends BaseResult {
     private Page<T> page;
 
     public PageResult() {
-        this(null, null);
-    }
-
-    public PageResult(BaseResult base) {
-        this(base, null);
+        this.type = GenericUtils.getActualTypeArgument(this.getClass());
     }
 
     public PageResult(BaseResult base, Page<T> page) {
@@ -48,7 +44,8 @@ public class PageResult<T> extends BaseResult {
      * 
      * @return
      */
-    public @Transient boolean isEmpty() {
+    @Transient
+    public boolean isEmpty() {
         return page == null || page.isEmpty();
     }
 
@@ -72,11 +69,8 @@ public class PageResult<T> extends BaseResult {
      */
     public <E> PageResult<E> transform(Function<T, E> mapper) {
         Preconditions.checkArgument(mapper != null);
-        PageResult<E> result = new PageResult<>(this);
-        if (page != null) {
-            result.setPage(this.page.map(mapper));
-        }
-        return result;
+        Page<E> pg = page == null ? null : page.map(mapper);
+        return new PageResult<>(this, pg);
     }
 
     @SuppressWarnings("unchecked")

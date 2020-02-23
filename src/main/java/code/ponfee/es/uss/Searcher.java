@@ -4,6 +4,7 @@ import java.util.Map;
 
 import code.ponfee.commons.json.Jsons;
 import code.ponfee.es.uss.res.BaseResult;
+import code.ponfee.es.uss.res.DataResult;
 
 /**
  * Searcher
@@ -20,23 +21,24 @@ public class Searcher {
         this.appId = appId;
     }
 
-    public <T extends BaseResult> T search(SearchPlatform sp, String searchId, String params) {
+    public <T extends DataResult> T search(SearchPlatform sp, String searchId, String params) {
         return search(sp, searchId, params, null);
     }
 
-    public <T extends BaseResult> T  search(SearchPlatform sp, String searchId, 
+    @SuppressWarnings("unchecked")
+    public <T extends DataResult> T  search(SearchPlatform sp, String searchId, 
                                             String params, Map<String, String> headers) {
-        T result = SearchRequestBuilder
+        BaseResult result = SearchRequestBuilder
             .newBuilder(sp, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()
             .get();
 
-        if (result.isFailure()) {
+        if (result.isFailure() || !(result instanceof DataResult)) {
             throw new RuntimeException("USS request failure: " + Jsons.toJson(result));
         }
-        return result;
+        return (T) result;
     }
 
     public <T> T search(SearchPlatform sp, String searchId,

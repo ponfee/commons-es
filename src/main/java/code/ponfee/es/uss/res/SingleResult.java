@@ -5,7 +5,7 @@ package code.ponfee.es.uss.res;
  * 
  * @author Ponfee
  */
-public class SingleResult<T> extends BaseResult {
+public class SingleResult<T> extends DataResult {
 
     private static final long serialVersionUID = 5617181318941754226L;
 
@@ -13,8 +13,8 @@ public class SingleResult<T> extends BaseResult {
 
     public SingleResult() {}
 
-    public SingleResult(BaseResult other, T element) {
-        super(other);
+    public SingleResult(DataResult base, T element) {
+        super(base);
         this.element = element;
     }
 

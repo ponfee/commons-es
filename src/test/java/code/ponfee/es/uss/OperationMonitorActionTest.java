@@ -341,6 +341,7 @@ public class OperationMonitorActionTest  {
                .mustEquals("data_date", /*year.concat(String.format("%02d", date.getMonthValue()))*/"201902");
 
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), null));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x")));
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_ONE.header(), "x")));
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), MapResult.class, null));
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), Map.class, null));

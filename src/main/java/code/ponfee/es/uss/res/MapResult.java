@@ -13,17 +13,6 @@ public class MapResult extends BaseResult {
 
     private Map<String, Object> obj;
 
-    public MapResult() {}
-
-    public MapResult(BaseResult other) {
-        super(other);
-    }
-
-    public MapResult(BaseResult other, Map<String, Object> obj) {
-        super(other);
-        this.obj = obj;
-    }
-
     public Map<String, Object> getObj() {
         return obj;
     }

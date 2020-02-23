@@ -19,10 +19,6 @@ public class PageMapResult extends PageResult<Map<String, Object>> {
 
     public PageMapResult() {}
 
-    public PageMapResult(BaseResult base) {
-        super(base);
-    }
-
     public PageMapResult(BaseResult base, Page<Map<String, Object>> page) {
         super(base, page);
     }

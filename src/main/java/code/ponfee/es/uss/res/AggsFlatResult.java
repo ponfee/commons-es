@@ -26,7 +26,7 @@ import code.ponfee.es.uss.res.AggsTreeResult.AggsTreeItem;
  * 
  * @author Ponfee
  */
-public class AggsFlatResult extends BaseResult {
+public class AggsFlatResult extends DataResult {
 
     private static final long serialVersionUID = 8416510168590360734L;
 
@@ -34,15 +34,15 @@ public class AggsFlatResult extends BaseResult {
 
     public AggsFlatResult() {}
 
-    public AggsFlatResult(AggsFlatItem aggs) {
-        this.aggs = aggs;
+    public AggsFlatResult(AggsFlatItem other) {
+        this.aggs = other;
     }
 
-    public AggsFlatResult(AggsTreeResult aggs) {
-        super(aggs);
-        if (aggs.getAggs() != null) {
-            List<String>       columns = extractColumns(aggs.getAggs());
-            List<List<Object>> dataset = extractDataset(aggs.getAggs());
+    public AggsFlatResult(AggsTreeResult other) {
+        super(other);
+        if (other.getAggs() != null) {
+            List<String>       columns = extractColumns(other.getAggs());
+            List<List<Object>> dataset = extractDataset(other.getAggs());
             this.aggs = new AggsFlatItem(
                 columns.toArray(new String[columns.size()]), 
                 dataset.stream().map(List::toArray).collect(Collectors.toList())

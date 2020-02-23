@@ -1,6 +1,5 @@
 package code.ponfee.es.uss.res;
 
-import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
@@ -16,18 +15,6 @@ import code.ponfee.commons.reflect.BeanMaps;
 public class ListMapResult extends ListResult<Map<String, Object>> {
 
     private static final long serialVersionUID = 1583479732588220379L;
-
-    public ListMapResult() {
-        this(null, null);
-    }
-
-    public ListMapResult(BaseResult base) {
-        this(base, null);
-    }
-
-    public ListMapResult(BaseResult base, List<Map<String, Object>> list) {
-        super(base, list);
-    }
 
     // ----------------------------------------------------------------public methods
     /**

@@ -16,9 +16,7 @@ public class ScrollMapResult extends ScrollResult<Map<String, Object>> {
 
     private static final long serialVersionUID = 4464963886372526414L;
 
-    public ScrollMapResult() {
-        this(null, null);
-    }
+    public ScrollMapResult() {}
 
     public ScrollMapResult(BaseResult base, String scrollId) {
         super(base, scrollId);

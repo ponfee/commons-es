@@ -22,7 +22,7 @@ import code.ponfee.commons.reflect.GenericUtils;
  * 
  * @author Ponfee
  */
-public class ScrollResult<T> extends BaseResult {
+public class ScrollResult<T> extends DataResult {
 
     private static final long serialVersionUID = -7830410131280055362L;
 
@@ -32,13 +32,13 @@ public class ScrollResult<T> extends BaseResult {
     private List<T> list;
 
     public ScrollResult() {
-        this(null, null);
+        this.type = GenericUtils.getActualTypeArgument(this.getClass());
     }
 
     public ScrollResult(BaseResult base, String scrollId) {
         super(base);
-        this.type = GenericUtils.getActualTypeArgument(this.getClass());
         this.scrollId = scrollId;
+        this.type = GenericUtils.getActualTypeArgument(this.getClass());
     }
 
     /**

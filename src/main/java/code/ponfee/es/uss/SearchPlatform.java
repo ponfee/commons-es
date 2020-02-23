@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -27,6 +26,7 @@ import code.ponfee.es.uss.res.AggsFlatResult;
 import code.ponfee.es.uss.res.AggsTreeResult;
 import code.ponfee.es.uss.res.AggsTreeResult.AggsTreeItem;
 import code.ponfee.es.uss.res.BaseResult;
+import code.ponfee.es.uss.res.DataResult;
 import code.ponfee.es.uss.res.MapResult;
 import code.ponfee.es.uss.res.PageMapResult;
 import code.ponfee.es.uss.res.ScrollMapResult;
@@ -61,14 +61,14 @@ public enum SearchPlatform {
 
     SEARCH {
         @Override
-        protected PageMapResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected PageMapResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             return convertPageResult(result, parsePageParams(params));
         }
     }, //
 
     AGGS {
         @Override
-        protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected DataResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             return convertAggsResult(result, headers);
         }
 
@@ -80,7 +80,7 @@ public enum SearchPlatform {
 
     DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")) {
         @Override
-        protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected DataResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             Map<String, Object> data = result.getObj();
             if (data.containsKey(AGGS_ROOT)) {
                 return convertAggsResult(result, headers);
@@ -92,10 +92,10 @@ public enum SearchPlatform {
 
     SCROLL(ImmutableMap.of("version", "scroll")) {
         @Override @SuppressWarnings("unchecked")
-        protected ScrollMapResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected ScrollMapResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             ScrollMapResult scrollResult = new ScrollMapResult(result, null);
             Map<String, Object> data = result.getObj();
-            scrollResult.setScrollId(Objects.toString(data.get("scrollId"), ""));
+            scrollResult.setScrollId((String) data.getOrDefault("scrollId", ""));
             scrollResult.setList((List<Map<String, Object>>) data.get(HITS_ROOT));
             return scrollResult;
         }
@@ -112,6 +112,9 @@ public enum SearchPlatform {
 
     private static final String AGGS_ROOT = "aggregations";
     private static final String HITS_ROOT = "hits";
+    private static final String HIT_NUM = "hitNum";
+    private static final String RETURN_NUM = "returnNum";
+    private static final String TOOK_TIME = "tookTime";
 
     private final String urlSuffix;
     private final String requestBodyStructure;
@@ -166,9 +169,6 @@ public enum SearchPlatform {
                 return (E) result;
             }
 
-            result.setHitNum(Numbers.toWrapLong(result.getObj().get("hitNum")));
-            result.setReturnNum(Numbers.toWrapLong(result.getObj().get("returnNum")));
-            result.setTookTime(Numbers.toWrapInt(result.getObj().get("tookTime")));
             return (E) convertResult(result, params, headers);
         } catch (Exception e) {
             logger.warn("BDP-USS search request failure: {}", resp, e);
@@ -177,7 +177,15 @@ public enum SearchPlatform {
     }
 
     // ----------------------------------------------------------protected methods
-    protected abstract BaseResult convertResult(MapResult result, String params, Map<String, String> headers);
+    private DataResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        DataResult dataRes = convertResult0(result, params, headers);
+        dataRes.setHitNum(Numbers.toWrapLong(result.getObj().get(HIT_NUM)));
+        dataRes.setReturnNum(Numbers.toWrapLong(result.getObj().get(RETURN_NUM)));
+        dataRes.setTookTime(Numbers.toWrapInt(result.getObj().get(TOOK_TIME)));
+        return dataRes;
+    }
+
+    protected abstract DataResult convertResult0(MapResult result, String params, Map<String, String> headers);
 
     @SuppressWarnings("unchecked")
     protected PageParams parsePageParams(String params) {
@@ -205,7 +213,7 @@ public enum SearchPlatform {
         int pageSize = params.getPageSize(), pageNum = params.getPageNum(), from = params.getFrom();
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
         Page<Map<String, Object>> page = Page.of(list);
-        page.setTotal(result.getHitNum());
+        page.setTotal(Numbers.toLong(result.getObj().get(HIT_NUM)));
         page.setPages(PageParams.computeTotalPages(page.getTotal(), pageSize)); // 总页数
         page.setPageNum(pageNum);
         page.setPageSize(pageSize);
@@ -223,7 +231,7 @@ public enum SearchPlatform {
     }
 
     @SuppressWarnings("unchecked")
-    private static BaseResult convertAggsResult(MapResult result, Map<String, String> headers) {
+    private static DataResult convertAggsResult(MapResult result, Map<String, String> headers) {
         AggsTreeResult tree = new AggsTreeResult(result);
 
         // aggregations of search result

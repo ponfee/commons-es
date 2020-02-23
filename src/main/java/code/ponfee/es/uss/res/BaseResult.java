@@ -19,35 +19,27 @@ public class BaseResult implements Serializable, MarshalJsonResult {
     private static final long serialVersionUID = -4846734605399283040L;
 
     // ---------------------------------head field
-    private String requestId;
     private Boolean success;
+    private Date date;
+    private String requestId;
     private String business;
     private String errorCode;
     private String errorMessage;
     private String params;
-    private Date date;
     private String version;
-
-    // ---------------------------------data field
-    private Long hitNum;
-    private Long returnNum; // hits[]
-    private Integer tookTime;
 
     public BaseResult() {}
 
     public BaseResult(BaseResult base) {
         if (base != null) {
-            this.requestId = base.requestId;
             this.success = base.success;
+            this.date = base.date;
+            this.requestId = base.requestId;
             this.business = base.business;
             this.errorCode = base.errorCode;
             this.errorMessage = base.errorMessage;
             this.params = base.params;
-            this.date = base.date;
             this.version = base.version;
-            this.hitNum = base.hitNum;
-            this.returnNum = base.returnNum;
-            this.tookTime = base.tookTime;
         } else {
             this.success = false;
             this.date = new Date();
@@ -61,25 +53,10 @@ public class BaseResult implements Serializable, MarshalJsonResult {
     public static BaseResult failure(String errorCode, String errorMsg) {
         BaseResult result = new BaseResult();
         result.setSuccess(false);
+        result.setDate(new Date());
         result.setErrorCode(errorCode);
         result.setErrorMessage(errorMsg);
-        result.setDate(new Date());
         return result;
-    }
-
-    public static BaseResult success() {
-        BaseResult result = new BaseResult();
-        result.setSuccess(true);
-        result.setDate(new Date());
-        return result;
-    }
-
-    public String getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
     }
 
     public Boolean getSuccess() {
@@ -88,6 +65,22 @@ public class BaseResult implements Serializable, MarshalJsonResult {
 
     public void setSuccess(Boolean success) {
         this.success = success;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public String getBusiness() {
@@ -122,44 +115,12 @@ public class BaseResult implements Serializable, MarshalJsonResult {
         this.params = params;
     }
 
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
-        this.date = date;
-    }
-
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public Long getHitNum() {
-        return hitNum;
-    }
-
-    public void setHitNum(Long hitNum) {
-        this.hitNum = hitNum;
-    }
-
-    public Long getReturnNum() {
-        return returnNum;
-    }
-
-    public void setReturnNum(Long returnNum) {
-        this.returnNum = returnNum;
-    }
-
-    public Integer getTookTime() {
-        return tookTime;
-    }
-
-    public void setTookTime(Integer tookTime) {
-        this.tookTime = tookTime;
     }
 
     // -------------------------------------------------------others

@@ -20,7 +20,7 @@ import code.ponfee.commons.reflect.GenericUtils;
  * 
  * @author Ponfee
  */
-public class ListResult<T> extends BaseResult {
+public class ListResult<T> extends DataResult {
 
     private static final long serialVersionUID = 1583479732588220379L;
 
@@ -28,11 +28,7 @@ public class ListResult<T> extends BaseResult {
     private List<T> list;
 
     public ListResult() {
-        this(null, null);
-    }
-
-    public ListResult(BaseResult base) {
-        this(base, null);
+        this.type = GenericUtils.getActualTypeArgument(this.getClass());
     }
 
     public ListResult(BaseResult base, List<T> list) {
@@ -71,11 +67,10 @@ public class ListResult<T> extends BaseResult {
      */
     public <E> ListResult<E> transform(Function<T, E> transformer) {
         Preconditions.checkArgument(transformer != null);
-        ListResult<E> result = new ListResult<>(this);
-        if (list != null) {
-            result.setList(this.list.stream().map(transformer).collect(Collectors.toList()));
-        }
-        return result;
+        List<E> ls = (list == null) 
+                   ? null 
+                   : list.stream().map(transformer).collect(Collectors.toList());
+        return new ListResult<>(this, ls);
     }
 
     @SuppressWarnings("unchecked")

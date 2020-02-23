@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
  * 
  * @author Ponfee
  */
-public class AggsTreeResult extends BaseResult {
+public class AggsTreeResult extends DataResult {
 
     private static final long serialVersionUID = -8508458241937662387L;
 

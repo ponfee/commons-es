@@ -15,7 +15,7 @@ import code.ponfee.es.uss.res.AggsFlatResult.AggsFlatItem;
  * 
  * @author Ponfee
  */
-public class AggsSingleResult extends BaseResult {
+public class AggsSingleResult extends DataResult {
 
     private static final long serialVersionUID = 1495207519018349598L;
 
