@@ -406,7 +406,7 @@ public class SearchPlatformTest {
         BoolQueryBuilder query = QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("consignedTime").gte(0).lte(Long.MAX_VALUE));
         LongAdder la = new LongAdder();
         Set<String> set = new HashSet<>();
-        SearchAfterUtils.searchEnd(client(), SearchPlatform.DSL, "1136",  query, 9999, search -> search.fetchSource(new String[] { "consignedTime", "waybillNo", "_uid" }, null)
+        SearchAfterUtils.searchFull(client(), SearchPlatform.DSL, "1136",  query, 9999, search -> search.fetchSource(new String[] { "consignedTime", "waybillNo", "_uid" }, null)
                                    , list->{
                                        la.add(list.size());
                                        list.stream().map(m -> (String)m.get("waybillNo")).forEach(set::add);

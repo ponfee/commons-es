@@ -22,12 +22,12 @@ import code.ponfee.es.uss.res.ListResult;
  */
 public class SearchAfterUtils {
 
-    private static final Map<String, String> HEADERS = ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x");
+    private static final Map<String, String> HEADERS = ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "X");
 
     @SuppressWarnings("unchecked")
-    public static <E> List<Map<String, Object>> searchAfter(SearchClient client, SearchPlatform type, String searchId, 
-                                                            BoolQueryBuilder query, int size, 
-                                                            Consumer<SearchSourceBuilder> prepare, 
+    public static <E> List<Map<String, Object>> searchAfter(SearchClient client, SearchPlatform type, 
+                                                            String searchId, BoolQueryBuilder query, 
+                                                            int size, Consumer<SearchSourceBuilder> prepare, 
                                                             SearchAfter<E>... searchAfters) {
         SearchSourceBuilder builder = new SearchSourceBuilder().query(query).size(size);
         Object[] values = new Object[searchAfters.length];
@@ -45,11 +45,11 @@ public class SearchAfterUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> void searchEnd(SearchClient client, SearchPlatform type, String searchId, 
-                                     BoolQueryBuilder query, int size,
-                                     Consumer<SearchSourceBuilder> prepare, 
-                                     Consumer<List<Map<String, Object>>> consumer, 
-                                     SearchAfter<E>... searchStarts) {
+    public static <E> void searchFull(SearchClient client, SearchPlatform type, String searchId, 
+                                      BoolQueryBuilder query, int size,
+                                      Consumer<SearchSourceBuilder> prepare, 
+                                      Consumer<List<Map<String, Object>>> consumer, 
+                                      SearchAfter<E>... searchStarts) {
         List<Map<String, Object>> each;
         do {
             each = searchAfter(client, type, searchId, query, size, prepare, searchStarts);

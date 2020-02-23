@@ -179,14 +179,6 @@ public enum SearchPlatform {
     }
 
     // ----------------------------------------------------------protected methods
-    private DataResult convertResult(MapResult result, String params, Map<String, String> headers) {
-        DataResult dataRes = convertResult0(result, params, headers);
-        dataRes.setHitNum(Numbers.toWrapLong(result.getObj().get(HIT_NUM)));
-        dataRes.setReturnNum(Numbers.toWrapLong(result.getObj().get(RETURN_NUM)));
-        dataRes.setTookTime(Numbers.toWrapInt(result.getObj().get(TOOK_TIME)));
-        return dataRes;
-    }
-
     protected abstract DataResult convertResult0(MapResult result, String params, Map<String, String> headers);
 
     @SuppressWarnings("unchecked")
@@ -209,6 +201,14 @@ public enum SearchPlatform {
     }
 
     // ------------------------------------------------------------------private methods
+    private DataResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        DataResult dataRes = convertResult0(result, params, headers);
+        dataRes.setHitNum(Numbers.toWrapLong(result.getObj().get(HIT_NUM)));
+        dataRes.setReturnNum(Numbers.toWrapLong(result.getObj().get(RETURN_NUM)));
+        dataRes.setTookTime(Numbers.toWrapInt(result.getObj().get(TOOK_TIME)));
+        return dataRes;
+    }
+
     @SuppressWarnings("unchecked")
     private static PageMapResult convertPageResult(
         MapResult result, PageParams params) {
@@ -236,7 +236,7 @@ public enum SearchPlatform {
     private static DataResult convertAggsResult(MapResult result, Map<String, String> headers) {
         AggsTreeResult tree = new AggsTreeResult(result);
 
-        // aggregations of search result
+        // agg of dsl result
         Map<String, Object> aggs = (Map<String, Object>) result.getObj().get(AGGS_ROOT);
         if (MapUtils.isEmpty(aggs)) {
             return tree;

@@ -12,11 +12,13 @@ import com.google.common.collect.Lists;
 
 import code.ponfee.es.uss.res.AggsFlatResult;
 import code.ponfee.es.uss.res.AggsFlatResult.AggsFlatItem;
+import code.ponfee.es.uss.res.AggsSingleResult;
+import code.ponfee.es.uss.res.AggsSingleResult.AggsSingleItem;
 
 public class AggFlatResultTest {
 
     @Test
-    public void test() {
+    public void test1() {
         String[] dimensions = { "a", "b", "c", "d" };
         System.out.println(Objects.deepEquals(dimensions, new String[] { "a", "b", "c", "d" }));
         AggsFlatResult result = new AggsFlatResult();
@@ -40,4 +42,22 @@ public class AggFlatResultTest {
         System.out.println(JSON.toJSONString(aggs.getDataset()));
     }
 
+    @Test
+    public void test2() {
+        String[] dimensions = { "a", "b", "c", "d" };
+        
+        String[] columns = Arrays.copyOf(dimensions, dimensions.length);
+        List<String> list = Lists.newArrayList(columns);
+        Collections.shuffle(list);
+        columns = list.toArray(new String[0]);
+
+        Object[] dataset = new Object[] { columns[0], columns[1], columns[2], columns[3] };
+        AggsSingleResult aggs = new AggsSingleResult();
+        AggsSingleItem item = new AggsSingleItem(columns, dataset);
+        aggs.setAggs(item);
+        
+        System.out.println(JSON.toJSONString(aggs));
+        aggs.adjustOrders(dimensions);
+        System.out.println(JSON.toJSONString(aggs));
+    }
 }
