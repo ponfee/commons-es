@@ -199,9 +199,9 @@ public enum SearchPlatform {
         );
     }
 
-    public static SearchPlatform of(String searcher) {
+    public static SearchPlatform of(String name) {
         for (SearchPlatform each : SearchPlatform.values()) {
-            if (each.name().equalsIgnoreCase(searcher)) {
+            if (each.name().equalsIgnoreCase(name)) {
                 return each;
             }
         }

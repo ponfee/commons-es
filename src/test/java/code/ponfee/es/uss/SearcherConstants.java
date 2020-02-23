@@ -4,8 +4,8 @@ import code.ponfee.commons.json.Jsons;
 
 public class SearcherConstants {
 
-    public static Searcher client() {
-        return new Searcher("", "");
+    public static SearchClient client() {
+        return new SearchClient("", "");
     }
 
     public static void console(Object obj) {

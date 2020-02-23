@@ -25,34 +25,34 @@ public class SearchAfterUtils {
     private static final Map<String, String> HEADERS = ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x");
 
     @SuppressWarnings("unchecked")
-    public static <E> List<Map<String, Object>> searchAfter(Searcher searcher, SearchPlatform type, String searchId, 
+    public static <E> List<Map<String, Object>> searchAfter(SearchClient client, SearchPlatform type, String searchId, 
                                                             BoolQueryBuilder query, int size, 
                                                             Consumer<SearchSourceBuilder> prepare, 
                                                             SearchAfter<E>... searchAfters) {
-        SearchSourceBuilder search = new SearchSourceBuilder().query(query).size(size);
+        SearchSourceBuilder builder = new SearchSourceBuilder().query(query).size(size);
         Object[] values = new Object[searchAfters.length];
         int i = 0;
         for (SearchAfter<E> sa : searchAfters) {
             SortField sf = sa.getSortField();
             values[i++] = sa.getValue();
-            search.sort(sf.getField(), SortOrder.fromString(sf.getSortOrder().name()));
+            builder.sort(sf.getField(), SortOrder.fromString(sf.getSortOrder().name()));
         }
-        search.searchAfter(values);
+        builder.searchAfter(values);
 
-        return ((ListResult<Map<String, Object>>) searcher.search(
-            type, searchId, search.toString(), HEADERS)
+        return ((ListResult<Map<String, Object>>) client.search(
+            type, searchId, builder.toString(), HEADERS)
         ).getList();
     }
 
     @SuppressWarnings("unchecked")
-    public static <E> void searchEnd(Searcher searcher, SearchPlatform type, String searchId, 
+    public static <E> void searchEnd(SearchClient client, SearchPlatform type, String searchId, 
                                      BoolQueryBuilder query, int size,
                                      Consumer<SearchSourceBuilder> prepare, 
                                      Consumer<List<Map<String, Object>>> consumer, 
                                      SearchAfter<E>... searchStarts) {
         List<Map<String, Object>> each;
         do {
-            each = searchAfter(searcher, type, searchId, query, size, prepare, searchStarts);
+            each = searchAfter(client, type, searchId, query, size, prepare, searchStarts);
             if (!each.isEmpty()) {
                 Map<String, Object> endRow = each.get(each.size() - 1);
                 for (int i = 0; i < searchStarts.length; i++) {

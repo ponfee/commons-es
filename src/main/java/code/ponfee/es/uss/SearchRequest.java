@@ -81,29 +81,29 @@ public class SearchRequest {
         BaseResult result = searcher.get(url, appId, searchId, params, headers);
 
         if (result instanceof ScrollResult) {
-            ScrollResult<T> scrollResult = (ScrollResult<T>) result;
-            if (scrollResult.size() < 1) {
+            ScrollResult<T> scrollRes = (ScrollResult<T>) result;
+            if (scrollRes.size() < 1) {
                 callback.noResult();
                 return result;
             }
 
-            long totalRecords = scrollResult.getHitNum();
+            long totalRecords = scrollRes.getHitNum();
 
             // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
             int scrollSize = Optional.ofNullable(getHeader(SearchConstants.HEAD_SCROLL_SIZE))
-                                     .map(Numbers::toInt).orElse(scrollResult.getList().size()),
+                                     .map(Numbers::toInt).orElse(scrollRes.getList().size()),
                 totalPages = PageParams.computeTotalPages(totalRecords, scrollSize), 
                 pageNo = 1;
-            callback.nextPage(scrollResult.getList(), totalRecords, totalPages, pageNo++);
+            callback.nextPage(scrollRes.getList(), totalRecords, totalPages, pageNo++);
 
-            while (scrollResult.size() >= scrollSize) {
-                scrollResult = (ScrollResult<T>) searcher.get(
+            while (scrollRes.size() >= scrollSize) {
+                scrollRes = (ScrollResult<T>) searcher.get(
                     url, appId, searchId, 
-                    new ScrollParams(params, scrollResult.getScrollId()).buildParams(), 
+                    new ScrollParams(params, scrollRes.getScrollId()).buildParams(), 
                     headers
                 );
-                if (scrollResult.size() > 0) {
-                    callback.nextPage(scrollResult.getList(), totalRecords, totalPages, pageNo++);
+                if (scrollRes.size() > 0) {
+                    callback.nextPage(scrollRes.getList(), totalRecords, totalPages, pageNo++);
                 }
             }
 

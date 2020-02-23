@@ -7,29 +7,30 @@ import code.ponfee.es.uss.res.BaseResult;
 import code.ponfee.es.uss.res.DataResult;
 
 /**
- * Searcher
+ * USS search client
  * 
  * @author Ponfee
  */
-public class Searcher {
+public class SearchClient {
 
     private final String url;
     private final String appId;
 
-    public Searcher(String url, String appId) {
+    public SearchClient(String url, String appId) {
         this.url = url;
         this.appId = appId;
     }
 
-    public <T extends DataResult> T search(SearchPlatform sp, String searchId, String params) {
-        return search(sp, searchId, params, null);
+    public <T extends DataResult> T search(SearchPlatform searcher, 
+                                           String searchId, String params) {
+        return search(searcher, searchId, params, null);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends DataResult> T  search(SearchPlatform sp, String searchId, 
+    public <T extends DataResult> T  search(SearchPlatform searcher, String searchId, 
                                             String params, Map<String, String> headers) {
         BaseResult result = SearchRequestBuilder
-            .newBuilder(sp, this.url, this.appId, searchId)
+            .newBuilder(searcher, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()
@@ -41,11 +42,11 @@ public class Searcher {
         return (T) result;
     }
 
-    public <T> T search(SearchPlatform sp, String searchId,
+    public <T> T search(SearchPlatform searcher, String searchId,
                         String params, Class<T> type, 
                         Map<String, String> headers) {
         return SearchRequestBuilder
-            .newBuilder(sp, this.url, this.appId, searchId)
+            .newBuilder(searcher, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()

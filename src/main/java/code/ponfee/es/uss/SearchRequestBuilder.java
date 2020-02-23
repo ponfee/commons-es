@@ -30,8 +30,8 @@ public class SearchRequestBuilder {
         this.searchId = searchId;
     }
 
-    public static SearchRequestBuilder newBuilder(
-        SearchPlatform searcher, String url, String appId, String searchId) {
+    public static SearchRequestBuilder newBuilder(SearchPlatform searcher, String url, 
+                                                  String appId, String searchId) {
         return new SearchRequestBuilder(searcher, url, appId, searchId);
     }
 
