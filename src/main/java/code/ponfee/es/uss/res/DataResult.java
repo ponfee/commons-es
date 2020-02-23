@@ -1,7 +1,7 @@
 package code.ponfee.es.uss.res;
 
 /**
- * USS data result
+ * USS data result(response has data: hits or aggs not be null)
  * 
  * @author Ponfee
  */
@@ -11,7 +11,7 @@ public abstract class DataResult extends BaseResult {
 
     // ---------------------------------data field
     private Long hitNum;
-    private Long returnNum; // hits[]
+    private Long returnNum; // hits[] array length
     private Integer tookTime;
 
     public DataResult() {}

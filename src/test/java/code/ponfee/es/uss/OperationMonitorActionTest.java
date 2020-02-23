@@ -4,6 +4,7 @@ import static code.ponfee.es.uss.SearcherConstants.client;
 import static code.ponfee.es.uss.SearcherConstants.console;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Map;
 
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -12,8 +13,10 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 
+import code.ponfee.commons.json.Jsons;
 import code.ponfee.es.ESQueryBuilder;
 import code.ponfee.es.uss.res.BaseResult;
 import code.ponfee.es.uss.res.MapResult;
@@ -340,11 +343,17 @@ public class OperationMonitorActionTest  {
                .mustEquals("industry_name", "医疗器械")
                .mustEquals("data_date", /*year.concat(String.format("%02d", date.getMonthValue()))*/"201902");
 
-        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), null));
-        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x")));
-        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_ONE.header(), "x")));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), null)); // page
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_LIST.header(), "x"))); // list
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_ONE.header(), "x"))); // single
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), MapResult.class, null));
         console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), Map.class, null));
-        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), String.class, null));
+        System.out.println(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), String.class, null));
+    }
+    
+    @Test
+    public void test2() {
+        System.out.println(Jsons.toJson(new Date()));
+        System.out.println(JSON.toJSONString(new Date()));
     }
 }

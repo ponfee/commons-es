@@ -152,6 +152,10 @@ public class ElasticSearchClient implements DisposableBean {
         return client;
     }
 
+    public TransportClient client() {
+        return client;
+    }
+
     // ---------------------------------------------------------------------------------------------create index
     /**
      * 创建空索引： 默认setting，无mapping

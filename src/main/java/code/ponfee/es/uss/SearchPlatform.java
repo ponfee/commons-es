@@ -151,9 +151,11 @@ public enum SearchPlatform {
     }
 
     // ----------------------------------------------------------request search platform
+    @SuppressWarnings("unchecked")
     public <T> T get(String url, Class<T> type, String appId, String searchId,
                      String params, Map<String, String> headers) {
-        return JSON.parseObject(request(url, appId, searchId, params, headers), type);
+        String resp = request(url, appId, searchId, params, headers);
+        return type == String.class ? (T) resp : JSON.parseObject(resp, type);
     }
 
     @SuppressWarnings("unchecked")

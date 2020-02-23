@@ -34,15 +34,15 @@ public class AggsFlatResult extends DataResult {
 
     public AggsFlatResult() {}
 
-    public AggsFlatResult(AggsFlatItem other) {
-        this.aggs = other;
+    public AggsFlatResult(AggsFlatItem aggs) {
+        this.aggs = aggs;
     }
 
-    public AggsFlatResult(AggsTreeResult other) {
-        super(other);
-        if (other.getAggs() != null) {
-            List<String>       columns = extractColumns(other.getAggs());
-            List<List<Object>> dataset = extractDataset(other.getAggs());
+    public AggsFlatResult(AggsTreeResult tree) {
+        super(tree);
+        if (tree.getAggs() != null) {
+            List<String>       columns = extractColumns(tree.getAggs());
+            List<List<Object>> dataset = extractDataset(tree.getAggs());
             this.aggs = new AggsFlatItem(
                 columns.toArray(new String[columns.size()]), 
                 dataset.stream().map(List::toArray).collect(Collectors.toList())
