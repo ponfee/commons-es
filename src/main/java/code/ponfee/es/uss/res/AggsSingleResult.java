@@ -25,9 +25,9 @@ public class AggsSingleResult extends BaseResult {
 
     public AggsSingleResult(AggsFlatResult flat) {
         super(flat);
-        List<Object[]> ds = flat.getAggs().getDataset();
-        Object[] dataset = CollectionUtils.isEmpty(ds) ? null : ds.get(0);
-        this.aggs = new AggsSingleItem(flat.getAggs().getColumns(), dataset);
+        List<Object[]> list = flat.getAggs().getDataset();
+        Object[] array = CollectionUtils.isEmpty(list) ? null : list.get(0);
+        this.aggs = new AggsSingleItem(flat.getAggs().getColumns(), array);
     }
 
     public AggsSingleItem getAggs() {

@@ -34,13 +34,34 @@ import code.ponfee.es.uss.res.ScrollMapResult;
 /**
  * USS（unify search service） Searcher
  * 
+ * EXCEPTION
+ *   EMPTY RESPONSE       ->  BaseResult
+ *   PARSE JSON FAIL      ->  BaseResult
+ *   RESPONSE ERROR CODE  ->  MapResult
+ * 
+ * SEARCH
+ *  DEFAULT               ->  PageMapResult
+ *  X-RESULT-LIST         ->  ListResult
+ *  X-RESULT-ONE          ->  SingleResult
+ * 
+ * SCROLL：
+ *  DEFAULT               ->  ScrollMapResult
+ * 
+ * AGGS
+ *   DEFAULT              ->  AggsFlatResult
+ *   X-AGGS-TREE          ->  AggsTreeResult
+ *   X-RESULT-ONE         ->  AggsSingleResult
+ * 
+ * DSL
+ *   SEARCH, AGGS
+ * 
  * @author Ponfee
  */
 public enum SearchPlatform {
 
     SEARCH {
         @Override
-        protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected PageMapResult convertResult(MapResult result, String params, Map<String, String> headers) {
             return convertPageResult(result, parsePageParams(params));
         }
     }, //
@@ -71,7 +92,7 @@ public enum SearchPlatform {
 
     SCROLL(ImmutableMap.of("version", "scroll")) {
         @Override @SuppressWarnings("unchecked")
-        protected BaseResult convertResult(MapResult result, String params, Map<String, String> headers) {
+        protected ScrollMapResult convertResult(MapResult result, String params, Map<String, String> headers) {
             ScrollMapResult scrollResult = new ScrollMapResult(result, null);
             Map<String, Object> data = result.getObj();
             scrollResult.setScrollId(Objects.toString(data.get("scrollId"), ""));
@@ -126,37 +147,23 @@ public enum SearchPlatform {
         return MessageFormat.format(this.requestBodyStructure, appId, searchId, params);
     }
 
-    // ----------------------------------------------------------request search platform and response
-    public String getAsString(String url, String appId, String searchId,
-                              String params, Map<String, String> headers) {
-        //logger.debug("USS request params: {}", params);
-        String resp = buildHttp(url, appId, searchId, params, headers).request();
-        //logger.debug("USS response body: {}", resp);
-        return resp;
-    }
-
+    // ----------------------------------------------------------request search platform
     public <T> T get(String url, Class<T> type, String appId, String searchId,
                      String params, Map<String, String> headers) {
-        return JSON.parseObject(getAsString(url, appId, searchId, params, headers), type);
+        return JSON.parseObject(request(url, appId, searchId, params, headers), type);
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getAsMap(String url, String appId, String searchId,
+    public <E extends BaseResult> E get(String url, String appId, String searchId,
                                         String params, Map<String, String> headers) {
-        return get(url, Map.class, appId, searchId, params, headers);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <E extends BaseResult> E getAsResult(String url, String appId, String searchId,
-                                                String params, Map<String, String> headers) {
-        String resp = getAsString(url, appId, searchId, params, headers);
+        String resp = request(url, appId, searchId, params, headers);
         if (StringUtils.isEmpty(resp)) {
             return (E) BaseResult.failure("Empty response.");
         }
         try {
             MapResult result = JSON.parseObject(resp, MapResult.class);
             if (result.isFailure() || MapUtils.isEmpty(result.getObj())) {
-                return (E) new BaseResult(result);
+                return (E) result;
             }
 
             result.setHitNum(Numbers.toWrapLong(result.getObj().get("hitNum")));
@@ -169,6 +176,7 @@ public enum SearchPlatform {
         }
     }
 
+    // ----------------------------------------------------------protected methods
     protected abstract BaseResult convertResult(MapResult result, String params, Map<String, String> headers);
 
     @SuppressWarnings("unchecked")
@@ -278,14 +286,16 @@ public enum SearchPlatform {
     }
 
     /**
+     * Requests to uss http api
+     * 
      * @param url       the search-platform es http url address
      * @param appId     the search-platform es http url api appid
      * @param searchId  the search-platform es http url api searchId
      * @param params    the search-platform es request params
      * @param headers   the http request headers
-     * @return a Http instance
+     * @return http response string
      */
-    private Http buildHttp(String url, String appId, String searchId,
+    private String request(String url, String appId, String searchId,
                            String params, Map<String, String> headers) {
         headers = MapUtils.isEmpty(headers) 
                   ? Maps.newHashMap() 
@@ -293,13 +303,23 @@ public enum SearchPlatform {
         if (this.defaultHeaders != null) {
             this.defaultHeaders.forEach(headers::putIfAbsent);
         }
+        logger.debug("USS request params: {}, headers: {}", params, headers);
 
-        return Http.post((url.endsWith("/") ? url : url + "/") + this.urlSuffix)
-                   .data(buildRequestBody(appId, searchId, params))
-                   .addHeader(headers)
-                   .connTimeoutSeconds(60)
-                   .readTimeoutSeconds(120)
-                   .contentType(ContentType.APPLICATION_JSON);
+        Http http = Http
+            .post((url.endsWith("/") ? url : url + "/") + this.urlSuffix)
+            .data(buildRequestBody(appId, searchId, params))
+            .addHeader(headers)
+            .connTimeoutSeconds(60)
+            .readTimeoutSeconds(120)
+            .contentType(ContentType.APPLICATION_JSON);
+
+        String responseBody = http.request();
+        logger.debug(
+            "USS response status: {}, headers: {}, body: {}", 
+            http.getStatus(), http.getRespHeaders(), responseBody
+        );
+
+        return responseBody;
     }
 
 }

@@ -4,6 +4,7 @@ import static code.ponfee.es.uss.SearcherConstants.client;
 import static code.ponfee.es.uss.SearcherConstants.console;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -15,6 +16,7 @@ import com.google.common.collect.ImmutableMap;
 
 import code.ponfee.es.ESQueryBuilder;
 import code.ponfee.es.uss.res.BaseResult;
+import code.ponfee.es.uss.res.MapResult;
 
 /**
  * @author Ponfee
@@ -328,5 +330,20 @@ public class OperationMonitorActionTest  {
         BaseResult result = client().search(SearchPlatform.DSL,  "1052", builder.toString(0,1), 
                                             ImmutableMap.of(ResultConvertor.RESULT_ONE.header(), "x"));
         console(result);
+    }
+
+    // ------------------------------------
+    @Test
+    public void test() {
+        ESQueryBuilder builder = ESQueryBuilder.newBuilder("ddt_rpt_sale_industry_customer_income", "ddt_rpt_sale_industry_customer_income");
+        builder.mustEquals("kind_name", "医药")
+               .mustEquals("industry_name", "医疗器械")
+               .mustEquals("data_date", /*year.concat(String.format("%02d", date.getMonthValue()))*/"201902");
+
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), null));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), ImmutableMap.of(ResultConvertor.RESULT_ONE.header(), "x")));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), MapResult.class, null));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), Map.class, null));
+        console(client().search(SearchPlatform.DSL, "1052", builder.toString(0, 1), String.class, null));
     }
 }

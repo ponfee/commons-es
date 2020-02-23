@@ -20,18 +20,18 @@ public class Searcher {
         this.appId = appId;
     }
 
-    public <T extends BaseResult> T search(SearchPlatform type, String searchId, String params) {
-        return search(type, searchId, params, null);
+    public <T extends BaseResult> T search(SearchPlatform sp, String searchId, String params) {
+        return search(sp, searchId, params, null);
     }
 
-    public <T extends BaseResult> T  search(SearchPlatform type, String searchId, 
+    public <T extends BaseResult> T  search(SearchPlatform sp, String searchId, 
                                             String params, Map<String, String> headers) {
         T result = SearchRequestBuilder
-            .newBuilder(type, this.url, this.appId, searchId)
+            .newBuilder(sp, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()
-            .getAsResult();
+            .get();
 
         if (result.isFailure()) {
             throw new RuntimeException("USS request failure: " + Jsons.toJson(result));
@@ -39,18 +39,15 @@ public class Searcher {
         return result;
     }
 
-    public String query(SearchPlatform type, String searchId, String params) {
-        return query(type, searchId, params, null);
-    }
-
-    public String query(SearchPlatform type, String searchId,
-                        String params, Map<String, String> headers) {
+    public <T> T search(SearchPlatform sp, String searchId,
+                        String params, Class<T> type, 
+                        Map<String, String> headers) {
         return SearchRequestBuilder
-            .newBuilder(type, this.url, this.appId, searchId)
+            .newBuilder(sp, this.url, this.appId, searchId)
             .params(params)
             .headers(headers)
             .build()
-            .getAsString();
+            .get(type);
     }
 
 }
