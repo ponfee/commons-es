@@ -2,6 +2,7 @@ package code.ponfee.es.uss;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +16,12 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 import code.ponfee.commons.http.ContentType;
 import code.ponfee.commons.http.Http;
 import code.ponfee.commons.math.Numbers;
 import code.ponfee.commons.model.Page;
+import code.ponfee.commons.model.PageHandler;
 import code.ponfee.es.uss.req.PageParams;
 import code.ponfee.es.uss.res.AggsFlatResult;
 import code.ponfee.es.uss.res.AggsTreeResult;
@@ -62,7 +63,7 @@ public enum SearchPlatform {
     SEARCH {
         @Override
         protected PageMapResult convertResult0(MapResult result, String params, Map<String, String> headers) {
-            return convertPageResult(result, parsePageParams(params));
+            return convertPageResult(result, new PageParams(params));
         }
     }, //
 
@@ -70,11 +71,6 @@ public enum SearchPlatform {
         @Override
         protected DataResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             return convertAggsResult(result, headers);
-        }
-
-        @Override
-        public PageParams parsePageParams(String params) {
-            throw new UnsupportedOperationException("Aggs search nonuse page params.");
         }
     }, //
 
@@ -85,7 +81,7 @@ public enum SearchPlatform {
             if (data.containsKey(AGGS_ROOT)) {
                 return convertAggsResult(result, headers);
             } else {
-                return convertPageResult(result, parsePageParams(params));
+                return convertPageResult(result, new PageParams(params));
             }
         }
     }, //
@@ -95,14 +91,12 @@ public enum SearchPlatform {
         protected ScrollMapResult convertResult0(MapResult result, String params, Map<String, String> headers) {
             ScrollMapResult scrollResult = new ScrollMapResult(result, null);
             Map<String, Object> data = result.getObj();
-            scrollResult.setScrollId((String) data.getOrDefault("scrollId", ""));
+            String scrollId = (String) data.get("scrollId");
+            if (StringUtils.isNotEmpty(scrollId)) {
+                scrollResult.setScrollId(scrollId);
+            }
             scrollResult.setList((List<Map<String, Object>>) data.get(HITS_ROOT));
             return scrollResult;
-        }
-
-        @Override
-        public PageParams parsePageParams(String params) {
-            throw new UnsupportedOperationException("Scroll search cannot custom setting page params");
         }
     }, //
 
@@ -110,11 +104,9 @@ public enum SearchPlatform {
 
     private static Logger logger = LoggerFactory.getLogger(SearchPlatform.class);
 
-    private static final String AGGS_ROOT = "aggregations";
-    private static final String HITS_ROOT = "hits";
-    private static final String HIT_NUM = "hitNum";
-    private static final String RETURN_NUM = "returnNum";
-    private static final String TOOK_TIME = "tookTime";
+    private static final String AGGS_ROOT  = "aggregations";
+    private static final String HITS_ROOT  = "hits";
+    private static final String HIT_NUM    = "hitNum";
 
     private final String urlSuffix;
     private final String requestBodyStructure;
@@ -181,16 +173,6 @@ public enum SearchPlatform {
     // ----------------------------------------------------------protected methods
     protected abstract DataResult convertResult0(MapResult result, String params, Map<String, String> headers);
 
-    @SuppressWarnings("unchecked")
-    protected PageParams parsePageParams(String params) {
-        Map<String, Object> map = JSON.parseObject(params, Map.class);
-        return new PageParams(
-            params,
-            Numbers.toInt(map.get("from"), PageParams.FROM), 
-            Numbers.toInt(map.get("size"), PageParams.SIZE)
-        );
-    }
-
     public static SearchPlatform of(String name) {
         for (SearchPlatform each : SearchPlatform.values()) {
             if (each.name().equalsIgnoreCase(name)) {
@@ -204,8 +186,8 @@ public enum SearchPlatform {
     private DataResult convertResult(MapResult result, String params, Map<String, String> headers) {
         DataResult dataRes = convertResult0(result, params, headers);
         dataRes.setHitNum(Numbers.toWrapLong(result.getObj().get(HIT_NUM)));
-        dataRes.setReturnNum(Numbers.toWrapLong(result.getObj().get(RETURN_NUM)));
-        dataRes.setTookTime(Numbers.toWrapInt(result.getObj().get(TOOK_TIME)));
+        dataRes.setReturnNum(Numbers.toWrapLong(result.getObj().get("returnNum")));
+        dataRes.setTookTime(Numbers.toWrapInt(result.getObj().get("tookTime")));
         return dataRes;
     }
 
@@ -216,7 +198,7 @@ public enum SearchPlatform {
         List<Map<String, Object>> list = (List<Map<String, Object>>) result.getObj().get(HITS_ROOT);
         Page<Map<String, Object>> page = Page.of(list);
         page.setTotal(Numbers.toLong(result.getObj().get(HIT_NUM)));
-        page.setPages(PageParams.computeTotalPages(page.getTotal(), pageSize)); // 总页数
+        page.setPages(PageHandler.computeTotalPages(page.getTotal(), pageSize)); // 总页数
         page.setPageNum(pageNum);
         page.setPageSize(pageSize);
         page.setSize(CollectionUtils.isEmpty(list) ? 0 : list.size());
@@ -307,11 +289,11 @@ public enum SearchPlatform {
      */
     private String request(String url, String appId, String searchId,
                            String params, Map<String, String> headers) {
-        headers = MapUtils.isEmpty(headers) 
-                  ? Maps.newHashMap() 
-                  : Maps.newHashMap(headers);
-        if (this.defaultHeaders != null) {
-            this.defaultHeaders.forEach(headers::putIfAbsent);
+        if (MapUtils.isEmpty(headers)) {
+            headers = this.defaultHeaders;
+        } else if (MapUtils.isNotEmpty(this.defaultHeaders)) {
+            headers = new HashMap<>(headers); // headers maybe immutable or unmodifiable
+            headers.putAll(this.defaultHeaders);
         }
         logger.debug("USS request params: {}, headers: {}", params, headers);
 

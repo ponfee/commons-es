@@ -3,10 +3,15 @@ package code.ponfee.es.uss.req;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.alibaba.fastjson.JSON;
 
+import code.ponfee.commons.math.Numbers;
+import code.ponfee.commons.model.PageHandler;
+
 /**
- * USS request page params
+ * USS page params
  * 
  * @author Ponfee
  */
@@ -14,63 +19,41 @@ public class PageParams extends BaseParams {
 
     private static final long serialVersionUID = 1836325388214516038L;
 
-    public static final int FROM = 0;
-    public static final int SIZE = 10;
-    public static final int PAGE_NUM = 1;
-    public static final int PAGE_SIZE = SIZE;
+    private static final int DEFAULT_FROM = 0;  // elasticsearch default from value
+    private static final int DEFAULT_SIZE = 10; // elasticsearch default size value
 
-    private int from;
-    private int pageNum;
-    private int pageSize;
+    private final int from;
+    private final int pageNum;
+    private final int pageSize;
     //private Map<String, org.elasticsearch.search.sort.SortOrder> sortOrder;
 
-    public PageParams(String params, int from, int size) {
+    @SuppressWarnings("unchecked")
+    public PageParams(String params) {
         super(params);
-        this.from = from;
-        this.pageSize = size;
-        this.pageNum = computePageNum(from, size);
-    }
 
-    public static int computeTotalPages(long totalRecords, int pageSize) {
-        return pageSize == 0 ? 0 : (int) ((totalRecords + pageSize - 1) / pageSize);
-    }
-
-    public static int computePageNum(long from, int size) {
-        return size == 0 ? 0 : (int) from / size + 1;
-    }
-
-    public static int computeOffset(long pageNum, int pageSize) {
-        return (int) (pageNum - 1) * pageSize;
+        Map<String, Object> map = JSON.parseObject(params, Map.class);
+        this.from = Numbers.toInt(map.get("from"), PageParams.DEFAULT_FROM);
+        this.pageSize = Numbers.toInt(map.get("size"), PageParams.DEFAULT_SIZE);
+        this.pageNum = PageHandler.computePageNum(this.from, this.pageSize);
     }
 
     public int getFrom() {
         return from;
     }
 
-    public void setFrom(int from) {
-        this.from = from;
-    }
-
     public int getPageNum() {
         return pageNum;
-    }
-
-    public void setPageNum(int pageNum) {
-        this.pageNum = pageNum;
     }
 
     public int getPageSize() {
         return pageSize;
     }
 
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public String buildParams() {
-        Map<String, Object> params = new HashMap<>(JSON.parseObject(getParams(), Map.class));
+        Map<String, Object> params = StringUtils.isEmpty(getParams()) 
+                                   ? new HashMap<>(4) 
+                                   : JSON.parseObject(getParams(), Map.class);
         params.put("from", from);
         params.put("size", pageSize);
         return JSON.toJSONString(params);

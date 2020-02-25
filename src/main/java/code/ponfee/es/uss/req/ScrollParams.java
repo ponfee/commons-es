@@ -1,5 +1,6 @@
 package code.ponfee.es.uss.req;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -7,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.alibaba.fastjson.JSON;
 
 /**
- * USS request scroll params
+ * USS scroll params
  * 
  * 接口类型为“查询”，是否有导数需求选“是”
  * 
@@ -65,7 +66,7 @@ public class ScrollParams extends BaseParams {
 
     private static final long serialVersionUID = 1241888462624598827L;
 
-    private String scrollId;
+    private final String scrollId;
 
     public ScrollParams(String params, String prevScrollId) {
         super(params);
@@ -76,17 +77,15 @@ public class ScrollParams extends BaseParams {
         return scrollId;
     }
 
-    public void setScrollId(String scrollId) {
-        this.scrollId = scrollId;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public String buildParams() {
         if (StringUtils.isEmpty(scrollId)) {
             return getParams();
         }
-        Map<String, Object> params = JSON.parseObject(getParams(), Map.class);
+
+        Map<String, Object> params = StringUtils.isEmpty(getParams()) 
+                                   ? new HashMap<>(2) 
+                                   : JSON.parseObject(getParams(), Map.class);
         params.put("scrollId", scrollId);
         return JSON.toJSONString(params);
     }

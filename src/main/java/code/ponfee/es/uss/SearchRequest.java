@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import code.ponfee.commons.math.Numbers;
-import code.ponfee.es.uss.req.PageParams;
+import code.ponfee.commons.model.PageHandler;
 import code.ponfee.es.uss.req.ScrollParams;
 import code.ponfee.es.uss.res.BaseResult;
 import code.ponfee.es.uss.res.ListResult;
@@ -92,7 +92,7 @@ public class SearchRequest {
             // scrollSize由创建接口时指定（单次返回条数），only use in compute total pages
             int scrollSize = Optional.ofNullable(getHeader(SearchConstants.HEAD_SCROLL_SIZE))
                                      .map(Numbers::toInt).orElse(scrollRes.getList().size()),
-                totalPages = PageParams.computeTotalPages(totalRecords, scrollSize), 
+                totalPages = PageHandler.computeTotalPages(totalRecords, scrollSize), 
                 pageNo = 1;
             callback.nextPage(scrollRes.getList(), totalRecords, totalPages, pageNo++);
 
