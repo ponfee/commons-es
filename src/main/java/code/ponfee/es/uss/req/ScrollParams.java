@@ -24,39 +24,39 @@ import com.alibaba.fastjson.JSON;
  * 
  * search reponse: 
  *  {
- *      "requestId": null,
- *      "success": true,
- *      "business": null,
- *      "errorCode": null,
- *      "errorMessage": null,
- *      "params": null,
- *      "date": "2018-09-19 15:23:36",
- *      "version": null,
- *      "obj": {
- *          "hitNum": 20000,
- *          "returnNum": 5000,
- *          "tookTime": 0,
- *          "hits": [
- *              {
- *                  "create_time": "2018-05-21 15:49:05",
- *                  "customer_code": "0100009656",
- *                  "table_name": "pl_get_bill_detail"
- *              },
- *              ...
- *              {xxx}
- *          ],
- *          "scrollId": "DnF1ZXJ5VGhlbkZldGNoBQAAAAABy7xkFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZRZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJRAAAAAAHLvGYWdmNNS3NJLW1SOHFkcWFMcGJPYkwyUQAAAAABy7xoFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZxZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJR"
- *      }
+ *    "requestId": null,
+ *    "success": true,
+ *    "business": null,
+ *    "errorCode": null,
+ *    "errorMessage": null,
+ *    "params": null,
+ *    "date": "2018-09-19 15:23:36",
+ *    "version": null,
+ *    "obj": {
+ *       "hitNum": 20000,
+ *       "returnNum": 5000,
+ *       "tookTime": 0,
+ *       "hits": [
+ *         {
+ *           "create_time": "2018-05-21 15:49:05",
+ *           "customer_code": "0100009656",
+ *           "table_name": "pl_get_bill_detail"
+ *         },
+ *         ...
+ *         {xxx}
+ *       ],
+ *       "scrollId": "DnF1ZXJ5VGhlbkZldGNoBQAAAAABy7xkFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZRZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJRAAAAAAHLvGYWdmNNS3NJLW1SOHFkcWFMcGJPYkwyUQAAAAABy7xoFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZxZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJR"
+ *    }
  *  }
  *  
  * second(or after) search params: 
  *  {
- *      "app": "appid",
- *      "searchId": 480,
- *      "params": {
- *          "code": "0100009656",
- *          "scrollId": "DnF1ZXJ5VGhlbkZldGNoBQAAAAABy7xkFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZRZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJRAAAAAAHLvGYWdmNNS3NJLW1SOHFkcWFMcGJPYkwyUQAAAAABy7xoFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZxZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJR"
- *      }
+ *    "app": "appid",
+ *    "searchId": 480,
+ *    "params": {
+ *      "code": "0100009656",
+ *      "scrollId": "DnF1ZXJ5VGhlbkZldGNoBQAAAAABy7xkFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZRZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJRAAAAAAHLvGYWdmNNS3NJLW1SOHFkcWFMcGJPYkwyUQAAAAABy7xoFnZjTUtzSS1tUjhxZHFhTHBiT2JMMlEAAAAAAcu8ZxZ2Y01Lc0ktbVI4cWRxYUxwYk9iTDJR"
+ *    }
  *  }
  * </pre>
  * 

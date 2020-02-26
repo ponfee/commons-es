@@ -41,6 +41,7 @@ public class SearchRequest {
         this.headers = headers;
     }
 
+    // ---------------------------------search api
     public <T> T get(Class<T> type) {
         return searcher.get(url, type, appId, searchId, params, headers);
     }
@@ -140,7 +141,6 @@ public class SearchRequest {
     }
 
     private static class FullSearchAccepter<T> implements ScrollSearchAccepter<T> {
-
         private boolean noResult = false;
         private List<T> data = new LinkedList<>();
 

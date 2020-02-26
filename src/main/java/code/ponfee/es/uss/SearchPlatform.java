@@ -77,12 +77,9 @@ public enum SearchPlatform {
     DSL("'{'\"app\":\"{0}\",\"searchId\":{1},\"params\":'{'\"dsl\":{2}'}}'", ImmutableMap.of("version", "1.0")) {
         @Override
         protected DataResult convertResult0(MapResult result, String params, Map<String, String> headers) {
-            Map<String, Object> data = result.getObj();
-            if (data.containsKey(AGGS_ROOT)) {
-                return convertAggsResult(result, headers);
-            } else {
-                return convertPageResult(result, new PageParams(params));
-            }
+            return result.getObj().containsKey(AGGS_ROOT) 
+                 ? convertAggsResult(result, headers) 
+                 : convertPageResult(result, new PageParams(params));
         }
     }, //
 
@@ -170,9 +167,6 @@ public enum SearchPlatform {
         }
     }
 
-    // ----------------------------------------------------------protected methods
-    protected abstract DataResult convertResult0(MapResult result, String params, Map<String, String> headers);
-
     public static SearchPlatform of(String name) {
         for (SearchPlatform each : SearchPlatform.values()) {
             if (each.name().equalsIgnoreCase(name)) {
@@ -181,6 +175,9 @@ public enum SearchPlatform {
         }
         return null;
     }
+
+    // ----------------------------------------------------------protected methods
+    protected abstract DataResult convertResult0(MapResult result, String params, Map<String, String> headers);
 
     // ------------------------------------------------------------------private methods
     private DataResult convertResult(MapResult result, String params, Map<String, String> headers) {
