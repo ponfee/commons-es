@@ -17,6 +17,8 @@ public class PageMapResult extends PageResult<Map<String, Object>> {
 
     private static final long serialVersionUID = -2042611387612676297L;
 
+    private static final TypeReference<PageMapResult> TYPE = new TypeReference<PageMapResult>() {};
+
     public PageMapResult() {}
 
     public PageMapResult(BaseResult base, Page<Map<String, Object>> page) {
@@ -30,10 +32,7 @@ public class PageMapResult extends PageResult<Map<String, Object>> {
 
     @Override
     public PageMapResult fromJson(String json) {
-        return JSON.parseObject(
-            json, 
-            new TypeReference<PageMapResult>() {}
-        );
+        return JSON.parseObject(json, TYPE);
     }
 
 }

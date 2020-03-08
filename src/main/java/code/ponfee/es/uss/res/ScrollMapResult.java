@@ -16,6 +16,8 @@ public class ScrollMapResult extends ScrollResult<Map<String, Object>> {
 
     private static final long serialVersionUID = 4464963886372526414L;
 
+    private static final TypeReference<ScrollMapResult> TYPE = new TypeReference<ScrollMapResult>() {};
+
     public ScrollMapResult() {}
 
     public ScrollMapResult(BaseResult base, String scrollId) {
@@ -29,10 +31,7 @@ public class ScrollMapResult extends ScrollResult<Map<String, Object>> {
 
     @Override
     public ScrollMapResult fromJson(String json) {
-        return JSON.parseObject(
-            json, 
-            new TypeReference<ScrollMapResult>() {}
-        );
+        return JSON.parseObject(json, TYPE);
     }
 
 }

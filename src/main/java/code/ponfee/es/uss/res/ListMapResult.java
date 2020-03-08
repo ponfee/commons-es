@@ -16,6 +16,8 @@ public class ListMapResult extends ListResult<Map<String, Object>> {
 
     private static final long serialVersionUID = 1583479732588220379L;
 
+    private static final TypeReference<ListMapResult> TYPE = new TypeReference<ListMapResult>() {};
+
     // ----------------------------------------------------------------public methods
     /**
      * 转换
@@ -29,10 +31,7 @@ public class ListMapResult extends ListResult<Map<String, Object>> {
 
     @Override
     public ListMapResult fromJson(String json) {
-        return JSON.parseObject(
-            json, 
-            new TypeReference<ListMapResult>() {}
-        );
+        return JSON.parseObject(json, TYPE);
     }
 
 }

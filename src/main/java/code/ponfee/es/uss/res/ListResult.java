@@ -1,6 +1,7 @@
 package code.ponfee.es.uss.res;
 
 import java.beans.Transient;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -100,7 +101,10 @@ public class ListResult<T> extends DataResult {
     }
 
     public void addList(List<T> data) {
-        list.addAll(data);
+        if (this.list == null) {
+            this.list = new ArrayList<>(data.size());
+        }
+        this.list.addAll(data);
     }
 
     public int size() {
