@@ -27,7 +27,7 @@ import code.ponfee.es.exception.GetMappingFailedException;
  * 
  * @author Ponfee
  */
-public abstract class BaseElasticSearchMapping implements IElasticSearchMapping {
+public abstract class BaseElasticSearchMapping implements ElasticSearchMapping {
 
     private final String index;
     private final String type;

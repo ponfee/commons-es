@@ -72,7 +72,7 @@ import code.ponfee.commons.model.SortField;
 import code.ponfee.commons.reflect.BeanMaps;
 import code.ponfee.commons.util.ObjectUtils;
 import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
-import code.ponfee.es.mapping.IElasticSearchMapping;
+import code.ponfee.es.mapping.ElasticSearchMapping;
 
 /**
  * ElasticSearch Client
@@ -268,7 +268,7 @@ public class ElasticSearchClient implements DisposableBean {
      * @param esMapping
      * @return
      */
-    public boolean putMapping(String indexName, IElasticSearchMapping esMapping) {
+    public boolean putMapping(String indexName, ElasticSearchMapping esMapping) {
         XContentBuilder content = esMapping.getMapping();
         PutMappingRequest req = new PutMappingRequest(esMapping.getIndex())
             .type(esMapping.getType()).source(content, content.contentType());

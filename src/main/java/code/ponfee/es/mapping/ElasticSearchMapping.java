@@ -8,7 +8,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
  * 
  * @author Ponfee
  */
-public interface IElasticSearchMapping {
+public interface ElasticSearchMapping {
 
     String getIndex();
 
