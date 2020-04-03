@@ -10,7 +10,17 @@
   <name>commons-es</name>
 
   <properties>
-    <spring.version>4.3.25.RELEASE</spring.version>
+    <project.encoding>UTF-8</project.encoding>
+    <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
+
+    <!-- javac -source 1.8 -target 1.8 -->
+    <java.version>1.8</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <maven.compiler.compilerVersion>${java.version}</maven.compiler.compilerVersion>
+
+    <spring.version>5.3.19</spring.version>
     <elasticsearch.version>5.6.16</elasticsearch.version>
   </properties>
 
@@ -62,7 +72,7 @@
     <dependency>
       <groupId>code.ponfee</groupId>
       <artifactId>commons-core</artifactId>
-      <version>2.2-SNAPSHOT</version>
+      <version>2.3-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>aspose</groupId>
@@ -191,4 +201,32 @@
     </dependency> -->
 
   </dependencies>
+
+  <repositories>
+    <repository>
+      <!-- 1、“https://repo1.maven.org/maven2”与“https://repo.maven.apache.org/maven2”是同一个仓库(central，即mavenCentral)
+           2、central是在“$MAVEN_HOME/lib/maven-model-builder.jar!/org/apache/maven/model/pom-4.0.0.xml”中配置的
+           3、central仓的镜像：https://maven.aliyun.com/repository/central
+           4、central仓和jcenter仓的聚合镜像仓：https://maven.aliyun.com/repository/public
+           5、搜索地址：https://search.maven.org/
+           6、文档：https://developer.aliyun.com/mvn/guide
+      -->
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    <!--<repository>
+      2022-02-01后jcenter不再支持下载(已停用)
+      <id>jcenter</id>
+      <url>https://jcenter.bintray.com</url>
+    </repository>-->
+    <repository>
+      <id>nexus.nuiton.org-central</id>
+      <url>https://nexus.nuiton.org/nexus/content/repositories/central</url>
+    </repository>
+    <repository>
+      <id>nexus.nuiton.org-thirdparty</id>
+      <url>https://nexus.nuiton.org/nexus/content/repositories/thirdparty</url>
+    </repository>
+  </repositories>
+
 </project>

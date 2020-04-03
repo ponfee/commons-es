@@ -1,25 +1,11 @@
 package code.ponfee.es;
 
-import static org.apache.commons.lang3.StringUtils.split;
-import static org.elasticsearch.common.xcontent.XContentType.JSON;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import code.ponfee.commons.json.Jsons;
+import code.ponfee.commons.model.*;
+import code.ponfee.commons.reflect.BeanMaps;
+import code.ponfee.commons.util.ObjectUtils;
+import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
+import code.ponfee.es.mapping.ElasticSearchMapping;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.elasticsearch.action.DocWriteResponse;
@@ -62,17 +48,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
-import code.ponfee.commons.json.Jsons;
-import code.ponfee.commons.model.Page;
-import code.ponfee.commons.model.PageHandler;
-import code.ponfee.commons.model.Result;
-import code.ponfee.commons.model.ResultCode;
-import code.ponfee.commons.model.SearchAfter;
-import code.ponfee.commons.model.SortField;
-import code.ponfee.commons.reflect.BeanMaps;
-import code.ponfee.commons.util.ObjectUtils;
-import code.ponfee.es.bulk.configuration.BulkProcessorConfiguration;
-import code.ponfee.es.mapping.ElasticSearchMapping;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static org.apache.commons.lang3.StringUtils.split;
+import static org.elasticsearch.common.xcontent.XContentType.JSON;
 
 /**
  * ElasticSearch Client
@@ -105,7 +94,7 @@ public class ElasticSearchClient implements DisposableBean {
     /**
      * @param clusterName  集群名称：es-cluster
      * @param clusterNodes 集群节点列表：ip1:port1,ip2:port2
-     * @param BeanMaps     the BeanMaps, convert elasticsearch result source map to target bean
+     * @param convertor     the BeanMaps, convert elasticsearch result source map to target bean
      */
     public ElasticSearchClient(String clusterName, String clusterNodes, BeanMaps convertor) {
         this.client = createClient(clusterName, clusterNodes);
@@ -195,9 +184,9 @@ public class ElasticSearchClient implements DisposableBean {
      * 创建索引，指定setting，设置type的mapping
      * 
      * @param index
-     * @param settings
      * @param type
-     * @param mapping
+     * @param mappingJsonMapper
+     * @param settingJsonMapper
      * @return
      */
     public <T, E> boolean createIndex(String index, String type, 
@@ -461,7 +450,7 @@ public class ElasticSearchClient implements DisposableBean {
         });
         BulkResponse resp = bulkRequest.get();
         if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+            return Result.failure(ResultCode.SERVER_ERROR.getCode(), resp.buildFailureMessage());
         } else {
             return Result.success();
         }
@@ -516,7 +505,7 @@ public class ElasticSearchClient implements DisposableBean {
         });
         BulkResponse resp = bulkReq.get();
         if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+            return Result.failure(ResultCode.SERVER_ERROR.getCode(), resp.buildFailureMessage());
         } else {
             return Result.success();
         }
@@ -549,7 +538,7 @@ public class ElasticSearchClient implements DisposableBean {
 
         BulkResponse resp = bulkReq.get();
         if (resp.hasFailures()) {
-            return Result.failure(ResultCode.SERVER_ERROR, resp.buildFailureMessage());
+            return Result.failure(ResultCode.SERVER_ERROR.getCode(), resp.buildFailureMessage());
         } else {
             return Result.success();
         }
