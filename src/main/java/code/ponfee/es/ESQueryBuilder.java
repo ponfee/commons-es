@@ -337,7 +337,7 @@ public class ESQueryBuilder {
      * @param points the polygon point
      * @return this of caller
      */
-    public ESQueryBuilder geoBoundingBox(String name, List<GeoPoint> points) {
+    public ESQueryBuilder geoPolygonQuery(String name, List<GeoPoint> points) {
         query().must(QueryBuilders.geoPolygonQuery(name, points));
         return this;
     }
